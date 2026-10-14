@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hanse-Händler &amp; Seefahrer – UI-Entwurf</title>
+<style>
+:root{
+  --parch:#e9d8a6; --parch-d:#d4bd84; --parch-l:#f5ead0;
+  --wood:#4a2f1a; --wood-l:#6b4426; --wood-d:#2e1c0e;
+  --ink:#2b1d10; --gold:#d9a521; --red:#8c2f24; --green:#4d6b2f; --blue:#2c4f6b;
+  --tap:48px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:Georgia,"Palatino Linotype",serif;color:var(--ink);background:var(--wood-d);overflow:hidden}
+.app{height:100dvh;display:flex;flex-direction:column;max-width:1100px;margin:0 auto;background:var(--parch);position:relative}
+input.tab{position:absolute;opacity:0;pointer-events:none}
+
+/* ---------- Kopfzeile ---------- */
+header{background:linear-gradient(var(--wood-l),var(--wood));color:var(--parch-l);padding:6px 12px;
+  border-bottom:3px solid var(--gold);box-shadow:0 3px 8px #0006;z-index:3}
+.hrow{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;background:#0004;border:1px solid #d9a52188;border-radius:20px;padding:3px 10px;font-size:13px;white-space:nowrap}
+.chip b{color:var(--gold)}
+.season{background:#0004}
+.hsub{font-size:12px;opacity:.85;margin-top:4px;display:flex;gap:10px;align-items:center}
+.cargo{flex:1;max-width:220px;height:8px;background:#0006;border-radius:4px;overflow:hidden;border:1px solid #d9a52166}
+.cargo i{display:block;height:100%;width:70%;background:linear-gradient(90deg,#b8801a,var(--gold))}
+
+/* ---------- Hauptbereich ---------- */
+main{flex:1;min-height:0;position:relative;overflow:hidden;background:
+  radial-gradient(ellipse at center,var(--parch-l),var(--parch) 60%,var(--parch-d))}
+main::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 40px #5a3a1a66}
+.view{display:none;position:absolute;inset:0;overflow:auto;padding:10px}
+#t1:checked~main .v1,#t2:checked~main .v2,#t3:checked~main .v3,#t4:checked~main .v4,#t5:checked~main .v5{display:block}
+.view.full{padding:0;overflow:auto;-webkit-overflow-scrolling:touch}
+.view.full .scene{min-width:960px;width:100%;height:100%}
+
+h2{font-variant:small-caps;letter-spacing:1px;font-size:18px;border-bottom:2px double var(--wood-l);margin:4px 0 8px;padding-bottom:2px}
+h3{font-size:14px;font-variant:small-caps;letter-spacing:.5px;margin:8px 0 4px}
+svg{display:block}
+.scene{width:100%;height:100%}
+
+/* Stadt-Titel */
+.banner{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:2;text-align:center;
+  background:linear-gradient(var(--parch-l),var(--parch-d));border:2px solid var(--wood);border-radius:4px;
+  padding:3px 22px;box-shadow:0 2px 6px #0006;font-variant:small-caps;font-size:17px;letter-spacing:1px}
+.banner small{display:block;font-size:11px;font-variant:normal;opacity:.7;letter-spacing:0}
+.hot{cursor:pointer}
+.hot .lbl rect{fill:var(--parch-l);stroke:var(--wood);stroke-width:2}
+.hot .lbl text{font:bold 13px Georgia,serif;fill:var(--ink);text-anchor:middle}
+.hot .glow{fill:none;stroke:var(--gold);stroke-width:3;stroke-dasharray:6 4;opacity:.0}
+.hot:hover .glow{opacity:1}
+.pulse{animation:pulse 2.4s infinite}
+@keyframes pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.pulse,.wave,.sail{animation:none}}
+.wave{animation:drift 7s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translateX(14px)}}
+.sail{animation:bob 4s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center bottom}
+@keyframes bob{to{transform:rotate(1.5deg) translateY(-2px)}}
+
+/* ---------- Aktionsleiste ---------- */
+.actions{display:flex;gap:8px;padding:8px 10px;overflow-x:auto;background:linear-gradient(var(--parch-d),var(--parch));
+  border-top:2px solid var(--wood-l);z-index:3}
+.btn{flex:none;min-height:var(--tap);min-width:var(--tap);padding:0 16px;border:2px solid var(--wood-d);border-radius:8px;
+  background:linear-gradient(var(--wood-l),var(--wood));color:var(--parch-l);font:bold 14px Georgia,serif;
+  box-shadow:0 3px 0 var(--wood-d),inset 0 1px 0 #fff3;white-space:nowrap;cursor:pointer;display:inline-flex;align-items:center;gap:6px;justify-content:center}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--wood-d)}
+.btn.gold{background:linear-gradient(#e8bb3c,#b8801a);color:var(--wood-d);border-color:#6b4a0c}
+.btn.red{background:linear-gradient(#b0432f,var(--red))}
+.btn.ghost{background:var(--parch-l);color:var(--ink);box-shadow:0 3px 0 var(--parch-d)}
+
+/* ---------- Fußzeile ---------- */
+footer{display:flex;background:linear-gradient(var(--wood),var(--wood-d));border-top:3px solid var(--gold);
+  padding-bottom:env(safe-area-inset-bottom);z-index:3}
+footer label{flex:1;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:#e9d8a6aa;font-size:11px;cursor:pointer;gap:1px;border-right:1px solid #0005;letter-spacing:.5px}
+footer label span{font-size:22px;line-height:1}
+#t1:checked~footer label[for=t1],#t2:checked~footer label[for=t2],#t3:checked~footer label[for=t3],
+#t4:checked~footer label[for=t4],#t5:checked~footer label[for=t5]{color:var(--gold);background:#ffffff14;box-shadow:inset 0 3px 0 var(--gold)}
+
+/* ---------- Karten / Panels ---------- */
+.card{background:var(--parch-l);border:2px solid var(--wood-l);border-radius:6px;padding:10px;box-shadow:0 2px 0 var(--parch-d),0 3px 8px #0003;margin-bottom:10px;position:relative}
+.card::before{content:"";position:absolute;inset:3px;border:1px solid #6b442633;border-radius:3px;pointer-events:none}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.row{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.bar{height:10px;background:#0002;border-radius:5px;overflow:hidden;border:1px solid #6b442688;flex:1}
+.bar i{display:block;height:100%;background:var(--green)}
+.bar.warn i{background:var(--gold)} .bar.bad i{background:var(--red)}
+.tag{font-size:11px;padding:1px 7px;border-radius:10px;background:var(--wood);color:var(--parch-l)}
+.tag.g{background:var(--green)} .tag.r{background:var(--red)} .tag.b{background:var(--blue)}
+.muted{opacity:.7;font-size:12px}
+.tier{display:flex;flex-wrap:wrap;gap:6px}
+.good{display:inline-flex;align-items:center;gap:4px;background:var(--parch);border:1px solid var(--wood-l);border-radius:14px;padding:3px 9px;font-size:13px}
+.arrow{text-align:center;color:var(--wood-l);font-size:18px;line-height:1}
+
+/* Schieberegler (nur Optik) */
+.slider{position:relative;height:var(--tap);display:flex;align-items:center}
+.slider .track{position:absolute;left:0;right:0;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--green),var(--gold),var(--red));border:1px solid var(--wood)}
+.slider .knob{position:absolute;width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f4d77a,#b8801a);border:2px solid var(--wood-d);box-shadow:0 2px 4px #0006;transform:translateX(-50%)}
+
+/* Karrierestufen */
+.career{display:flex;gap:4px;overflow-x:auto;padding:4px 0}
+.career div{flex:1;min-width:76px;text-align:center;font-size:12px;padding:8px 4px;border:2px solid var(--wood-l);border-radius:6px;background:var(--parch);opacity:.6}
+.career div.done{opacity:1;background:#cfe0a8}
+.career div.now{opacity:1;background:var(--gold);font-weight:bold;box-shadow:0 0 0 3px var(--wood)}
+.career span{display:block;font-size:20px}
+
+/* Routen-Assistent */
+.steps{display:flex;gap:8px;flex-wrap:wrap}
+.step{flex:1;min-width:200px;border:2px dashed var(--wood-l);border-radius:6px;padding:8px;background:#fff3}
+.step .n{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--wood);color:var(--parch-l);font-size:13px;margin-right:6px}
+
+/* Seeschlacht */
+.battle{display:flex;height:100%;flex-direction:column}
+.battle .field{flex:1;min-height:0;position:relative;background:#2c4f6b}
+.battle .hud{position:absolute;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;gap:8px;pointer-events:none;z-index:2}
+.hudbox{background:#f5ead0ee;border:2px solid var(--wood);border-radius:6px;padding:4px 8px;font-size:12px}
+
+@media (orientation:landscape) and (max-height:520px){
+  header{padding:3px 10px} .hsub{display:none}
+  footer label{min-height:48px;flex-direction:row;gap:6px;font-size:12px}
+  .actions{padding:5px 10px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<input class="tab" type="radio" name="tab" id="t1" checked>
+<input class="tab" type="radio" name="tab" id="t2">
+<input class="tab" type="radio" name="tab" id="t3">
+<input class="tab" type="radio" name="tab" id="t4">
+<input class="tab" type="radio" name="tab" id="t5">
+
+<!-- ================= KOPFZEILE ================= -->
+<header>
+  <div class="hrow">
+    <span class="chip">📅 <b>14. Mai 1360</b></span>
+    <span class="chip season">🌱 Frühling · Rückenwind</span>
+    <span class="chip">🪙 <b>12.450</b> Taler</span>
+    <span class="chip">⭐ Ruf: <b>Hoch</b></span>
+  </div>
+  <div class="hsub">⛵ Hanse-Kogge I <span class="cargo" title="Fracht"><i></i></span> 140/200 Fass · 🧭 Rang: Kaufmann</div>
+</header>
+
+<main>
+
+<!-- ================= 1. STADT (Lübeck) ================= -->
+<section class="view v1 full">
+  <div class="banner">Lübeck<small>Ostsee-Gotik · Haupt der Hanse · 24.300 Einw.</small></div>
+  <svg class="scene" viewBox="0 0 800 520" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Stadtansicht Lübeck">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9cc3d5"/><stop offset="1" stop-color="#f3e3b8"/></linearGradient>
+      <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3e6f8c"/><stop offset="1" stop-color="#244457"/></linearGradient>
+      <linearGradient id="brick" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b5533a"/><stop offset="1" stop-color="#8a3a28"/></linearGradient>
+      <linearGradient id="roofg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3f6b5a"/><stop offset="1" stop-color="#2b4c40"/></linearGradient>
+      <pattern id="cobble" width="20" height="12" patternUnits="userSpaceOnUse"><rect width="20" height="12" fill="#a8946a"/><path d="M0 6h20M10 0v6M5 6v6M15 6v6" stroke="#7d6b46" stroke-width="1" fill="none"/></pattern>
+      <g id="win"><rect width="9" height="14" rx="4" fill="#f3d37a" stroke="#4a2f1a" stroke-width="1.5"/></g>
+    </defs>
+    <rect width="800" height="520" fill="url(#sky)"/>
+    <g fill="#fff" opacity=".7"><ellipse cx="130" cy="60" rx="60" ry="14"/><ellipse cx="170" cy="50" rx="40" ry="12"/><ellipse cx="600" cy="80" rx="70" ry="14"/><ellipse cx="650" cy="68" rx="40" ry="11"/></g>
+    <!-- Skyline: Marienkirche & Holstentor-Silhouette -->
+    <g fill="#7b8f98" opacity=".75">
+      <rect x="40" y="150" width="46" height="130"/><polygon points="40,150 63,70 86,150"/>
+      <rect x="110" y="170" width="36" height="110"/><polygon points="110,170 128,110 146,170"/>
+      <rect x="640" y="160" width="50" height="120"/><polygon points="640,160 665,80 690,160"/>
+      <rect x="710" y="190" width="60" height="90"/>
+    </g>
+    <!-- Hafenwasser -->
+    <rect y="430" width="800" height="90" fill="url(#sea)"/>
+    <g class="wave" stroke="#cfe4ee" stroke-width="2" fill="none" opacity=".55"><path d="M20 462q15-8 30 0t30 0M300 480q15-8 30 0t30 0M560 458q15-8 30 0t30 0M690 492q15-8 30 0t30 0"/></g>
+    <!-- Kai -->
+    <rect y="405" width="800" height="28" fill="url(#cobble)"/>
+    <rect y="430" width="800" height="8" fill="#4a2f1a"/>
+    <g fill="#4a2f1a"><rect x="60" y="430" width="8" height="30"/><rect x="250" y="430" width="8" height="30"/><rect x="480" y="430" width="8" height="30"/><rect x="720" y="430" width="8" height="30"/></g>
+    <!-- Schiff im Hafen -->
+    <g class="sail">
+      <path d="M330 470q70 26 150 0l-14-26h-122z" fill="#6b4426" stroke="#2e1c0e" stroke-width="3"/>
+      <rect x="402" y="360" width="5" height="84" fill="#2e1c0e"/>
+      <path d="M345 372h58v54h-58z" fill="#f5ead0" stroke="#2e1c0e" stroke-width="2"/>
+      <path d="M410 376h46l-8 48h-38z" fill="#f5ead0" stroke="#2e1c0e" stroke-width="2"/>
+      <path d="M372 372v54M430 380v44" stroke="#8c2f24" stroke-width="4"/>
+      <path d="M407 360l22 8-22 8z" fill="#8c2f24"/>
+    </g>
+
+    <!-- ====== HOTSPOT: Rathaus (Mitte hinten) ====== -->
+    <g class="hot" id="hs-rathaus">
+      <rect x="330" y="190" width="170" height="215" fill="url(#brick)" stroke="#4a2f1a" stroke-width="3"/>
+      <polygon points="330,190 345,170 360,190 375,150 390,190 415,120 440,190 455,150 470,190 485,170 500,190" fill="#a24a33" stroke="#4a2f1a" stroke-width="3"/>
+      <rect x="395" y="60" width="40" height="70" fill="#8a3a28" stroke="#4a2f1a" stroke-width="3"/>
+      <polygon points="390,60 415,10 440,60" fill="url(#roofg)" stroke="#4a2f1a" stroke-width="3"/>
+      <circle cx="415" cy="90" r="11" fill="#f5ead0" stroke="#4a2f1a" stroke-width="2"/><path d="M415 90v-8M415 90l6 3" stroke="#2b1d10" stroke-width="2"/>
+      <g fill="#3a2414"><use href="#win" x="345" y="215"/><use href="#win" x="375" y="215"/><use href="#win" x="445" y="215"/><use href="#win" x="475" y="215"/>
+      <use href="#win" x="345" y="260"/><use href="#win" x="375" y="260"/><use href="#win" x="445" y="260"/><use href="#win" x="475" y="260"/></g>
+      <path d="M395 405v-62q20-26 40 0v62z" fill="#3a2414" stroke="#d9a521" stroke-width="3"/>
+      <rect class="glow" x="322" y="140" width="186" height="268" rx="6"/>
+      <g class="lbl" transform="translate(415 328)"><rect x="-44" y="-28" width="88" height="30" rx="6" transform="translate(0 -26)"/><text y="-37">🏛 Rathaus</text></g>
+    </g>
+
+    <!-- ====== HOTSPOT: Marktplatz (Mitte vorn: Stände) ====== -->
+    <g class="hot" id="hs-markt">
+      <rect x="250" y="360" width="80" height="48" fill="#6b4426" stroke="#2e1c0e" stroke-width="3"/>
+      <path d="M240 360l10-30h80l10 30z" fill="#c9a227" stroke="#2e1c0e" stroke-width="3"/>
+      <path d="M250 330v30M270 330v30M290 330v30M310 330v30M330 330v30" stroke="#8c2f24" stroke-width="6" opacity=".7"/>
+      <circle cx="268" cy="392" r="8" fill="#d9a521"/><rect x="288" y="384" width="16" height="14" fill="#b5533a"/><circle cx="316" cy="392" r="6" fill="#4d6b2f"/>
+      <rect class="glow" x="232" y="320" width="108" height="92" rx="6"/>
+      <g class="lbl" transform="translate(290 316)"><rect x="-52" y="-24" width="104" height="30" rx="6"/><text y="-4">⚖ Marktplatz</text></g>
+    </g>
+
+    <!-- ====== HOTSPOT: Kontor (links) ====== -->
+    <g class="hot" id="hs-kontor">
+      <rect x="140" y="230" width="100" height="175" fill="url(#brick)" stroke="#4a2f1a" stroke-width="3"/>
+      <path d="M140 230h18v-22h18v-22h18v-22h18v22h8v22h-80z" fill="#a24a33" stroke="#4a2f1a" stroke-width="3" transform="translate(0 0)"/>
+      <polygon points="136,232 190,170 244,232" fill="url(#roofg)" stroke="#4a2f1a" stroke-width="3"/>
+      <rect x="180" y="190" width="20" height="24" fill="#3a2414"/><path d="M190 172v-10" stroke="#4a2f1a" stroke-width="3"/><path d="M190 162l-18 8M190 162l18 8" stroke="#4a2f1a" stroke-width="2"/>
+      <g fill="#3a2414"><use href="#win" x="154" y="262"/><use href="#win" x="214" y="262"/></g>
+      <rect x="165" y="320" width="50" height="85" fill="#3a2414" stroke="#d9a521" stroke-width="3"/>
+      <path d="M190 320v85" stroke="#d9a521" stroke-width="2"/>
+      <rect class="glow" x="130" y="165" width="120" height="244" rx="6"/>
+      <g class="lbl" transform="translate(190 160)"><rect x="-60" y="-24" width="120" height="30" rx="6"/><text y="-4">📦 Eigenes Kontor</text></g>
+    </g>
+
+    <!-- ====== HOTSPOT: Werft (rechts, am Wasser) ====== -->
+    <g class="hot" id="hs-werft">
+      <rect x="560" y="300" width="180" height="105" fill="#6b4426" stroke="#2e1c0e" stroke-width="3"/>
+      <polygon points="548,302 650,230 752,302" fill="#4a2f1a" stroke="#2e1c0e" stroke-width="3"/>
+      <g stroke="#2e1c0e" stroke-width="2"><path d="M575 300v105M610 300v105M690 300v105M725 300v105"/></g>
+      <path d="M625 405v-60q25-24 50 0v60z" fill="#1d120a"/>
+      <path d="M700 232v-70h30" stroke="#2e1c0e" stroke-width="5" fill="none"/><path d="M730 162v40" stroke="#2e1c0e" stroke-width="2"/><circle cx="730" cy="206" r="6" fill="none" stroke="#2e1c0e" stroke-width="3"/>
+      <path d="M520 395q40 14 90 0l-8-14h-74z" fill="#8a6a3c" stroke="#2e1c0e" stroke-width="3" transform="translate(0 -40)"/>
+      <path d="M538 342v-38M538 306l30 6" stroke="#2e1c0e" stroke-width="3" fill="none"/>
+      <rect class="glow" x="510" y="225" width="244" height="184" rx="6"/>
+      <g class="lbl" transform="translate(650 200)"><rect x="-38" y="-24" width="76" height="30" rx="6"/><text y="-4">⚓ Werft</text></g>
+    </g>
+
+    <!-- ====== HOTSPOT: Schenke (links vorn) ====== -->
+    <g class="hot" id="hs-schenke">
+      <rect x="30" y="300" width="100" height="105" fill="#d9c9a0" stroke="#4a2f1a" stroke-width="3"/>
+      <g stroke="#4a2f1a" stroke-width="4"><path d="M30 330h100M30 360h100M55 300v105M105 300v105"/><path d="M30 300l25 30M130 300l-25 30" /></g>
+      <polygon points="22,302 80,250 138,302" fill="#8c2f24" stroke="#4a2f1a" stroke-width="3"/>
+      <g fill="#3a2414"><use href="#win" x="38" y="340"/><use href="#win" x="108" y="340"/></g>
+      <rect x="65" y="355" width="30" height="50" fill="#3a2414"/>
+      <path d="M118 302h24v-14" stroke="#4a2f1a" stroke-width="3" fill="none"/>
+      <g transform="translate(142 292)"><rect x="-2" y="0" width="30" height="22" rx="3" fill="#e8bb3c" stroke="#4a2f1a" stroke-width="2"/><path d="M6 6q8-4 16 0v10q-8 4-16 0z" fill="#f5ead0"/></g>
+      <rect class="glow" x="18" y="245" width="140" height="164" rx="6"/>
+      <g class="lbl" transform="translate(76 255)"><rect x="-44" y="-24" width="88" height="30" rx="6" transform="translate(0 -4)"/><text y="-8">🍺 Schenke</text></g>
+    </g>
+
+    <!-- ====== HOTSPOT: Eigene Betriebe (Bauplatz, rechts-mitte) ====== -->
+    <g class="hot" id="hs-bau">
+      <rect x="510" y="355" width="46" height="50" fill="none" stroke="#4a2f1a" stroke-width="3" stroke-dasharray="7 5"/>
+      <path d="M520 405v-60l16-14 16 14v60M520 380h32" stroke="#6b4426" stroke-width="4" fill="none"/>
+      <rect class="glow pulse" x="500" y="318" width="64" height="92" rx="6" style="opacity:1"/>
+      <g class="lbl" transform="translate(532 336)"><rect x="-54" y="-24" width="108" height="30" rx="6" transform="translate(0 -4)"/><text y="-8">🏭 Bauplatz</text></g>
+    </g>
+
+    <!-- Passanten -->
+    <g stroke="#2e1c0e" stroke-width="2"><circle cx="360" cy="416" r="5" fill="#e8c9a0"/><path d="M360 421v16" /><path d="M360 426l-8 8M360 426l8 8" /><rect x="352" y="436" width="16" height="2" fill="none"/>
+    <circle cx="465" cy="420" r="5" fill="#e8c9a0"/><path d="M465 425v16M465 430l-8 8M465 430l8 8"/></g>
+  </svg>
+</section>
+
+<!-- ================= 2. WELTKARTE ================= -->
+<section class="view v2 full">
+  <svg class="scene" viewBox="0 0 800 520" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Weltkarte Nord- und Ostsee">
+    <defs>
+      <pattern id="seaP" width="40" height="20" patternUnits="userSpaceOnUse"><rect width="40" height="20" fill="#b9cfc4"/><path d="M0 10q10-6 20 0t20 0" stroke="#9db8ae" fill="none" stroke-width="1.5"/></pattern>
+      <pattern id="landP" width="14" height="14" patternUnits="userSpaceOnUse"><rect width="14" height="14" fill="#d9c58c"/><circle cx="4" cy="4" r="1.2" fill="#b8a468"/><circle cx="11" cy="10" r="1.2" fill="#b8a468"/></pattern>
+    </defs>
+    <rect width="800" height="520" fill="url(#seaP)"/>
+    <g fill="url(#landP)" stroke="#6b4426" stroke-width="2.5" stroke-linejoin="round">
+      <!-- England -->
+      <path d="M40 330l20-40 30 10 10 40-10 50-40 20-30-30z"/>
+      <!-- Kontinent West/Süd (Flandern, Deutschland, Polen, Baltikum, Russland) -->
+      <path d="M130 470l30-60 30-40 50-10 40-30 30 0 20 20 60-10 40-30 70-20 50 10 60-50 50-70 60-30 60 0 70 20 0 330-760 0z"/>
+      <!-- Jütland -->
+      <path d="M270 300l10-70 20-50 25 10-10 60-10 40z"/>
+      <!-- Skandinavien -->
+      <path d="M320 160l10-60 40-60 60-30 90-10 60 30-30 50-50 10-30 50-20 70-30 60-30-20-40 10-20-40z"/>
+      <!-- Gotland -->
+      <ellipse cx="500" cy="230" rx="14" ry="26"/>
+    </g>
+    <!-- Meeres-Beschriftung -->
+    <g font-family="Georgia,serif" font-style="italic" fill="#3e6f8c" opacity=".85" text-anchor="middle">
+      <text x="170" y="210" font-size="20" letter-spacing="3">Nordsee</text>
+      <text x="500" y="320" font-size="20" letter-spacing="3" transform="rotate(-12 500 320)">Ostsee</text>
+    </g>
+    <!-- Eis (Winter-Layer, hier gezeigt als Vorschau) -->
+    <path d="M590 130q50 20 110 0l10 70-120 0z" fill="#e9f4f8" opacity=".0"/>
+    <!-- Handelsroute -->
+    <path d="M345 372q60 10 110 0t90-30" fill="none" stroke="#8c2f24" stroke-width="4" stroke-dasharray="3 9" stroke-linecap="round"/>
+    <path d="M345 372q-60-30-130-0t-70 40" fill="none" stroke="#8c2f24" stroke-width="3" stroke-dasharray="3 9" stroke-linecap="round" opacity=".5"/>
+    <!-- Städte -->
+    <g font-family="Georgia,serif" font-size="13" font-weight="bold" fill="#2b1d10" stroke="#f5ead0" stroke-width="3" paint-order="stroke">
+      <g><circle cx="150" cy="400" r="9" fill="#d9a521" stroke="#2e1c0e" stroke-width="2.5"/><text x="162" y="404">Brügge</text></g>
+      <g><circle cx="75" cy="345" r="9" fill="#d9a521" stroke="#2e1c0e" stroke-width="2.5"/><text x="88" y="349">London</text></g>
+      <g><circle cx="262" cy="338" r="10" fill="#d9a521" stroke="#2e1c0e" stroke-width="2.5"/><text x="214" y="326">Hamburg</text></g>
+      <g><circle cx="345" cy="372" r="12" fill="#8c2f24" stroke="#2e1c0e" stroke-width="3"/><text x="360" y="378">Lübeck</text></g>
+      <g><circle cx="425" cy="388" r="9" fill="#d9a521" stroke="#2e1c0e" stroke-width="2.5"/><text x="402" y="414">Stettin</text></g>
+      <g><circle cx="505" cy="372" r="9" fill="#d9a521" stroke="#2e1c0e" stroke-width="2.5"/><text x="440" y="362">Danzig</text></g>
+      <g><circle cx="590" cy="318" r="9" fill="#d9a521" stroke="#2e1c0e" stroke-width="2.5"/><text x="602" y="322">Riga</text></g>
+      <g><circle cx="620" cy="238" r="9" fill="#9fb4bd" stroke="#2e1c0e" stroke-width="2.5"/><text x="633" y="242">Reval ❄</text></g>
+      <g><circle cx="505" cy="205" r="9" fill="#d9a521" stroke="#2e1c0e" stroke-width="2.5"/><text x="523" y="198">Visby</text></g>
+      <g><circle cx="720" cy="190" r="9" fill="#d9a521" stroke="#2e1c0e" stroke-width="2.5"/><text x="660" y="170">Novgorod</text></g>
+      <g><circle cx="320" cy="90" r="9" fill="#d9a521" stroke="#2e1c0e" stroke-width="2.5"/><text x="332" y="94">Bergen</text></g>
+    </g>
+    <!-- Schiff -->
+    <g transform="translate(398 376)"><path d="M-12 4l24 0-6 8h-12z" fill="#6b4426" stroke="#2e1c0e" stroke-width="2"/><path d="M0 4v-18" stroke="#2e1c0e" stroke-width="2"/><path d="M0-14l10 6-10 8z" fill="#f5ead0" stroke="#2e1c0e" stroke-width="1.5"/></g>
+    <!-- Piraten -->
+    <g transform="translate(250 255)"><circle r="16" fill="#2e1c0eaa" stroke="#8c2f24" stroke-width="2" stroke-dasharray="4 3"/><text text-anchor="middle" y="6" font-size="18">☠</text></g>
+    <!-- Wind-Kompass -->
+    <g transform="translate(730 80)"><circle r="38" fill="#f5ead0cc" stroke="#4a2f1a" stroke-width="3"/><path d="M0-30l6 30h-12z" fill="#8c2f24"/><path d="M0 30l6-30h-12z" fill="#4a2f1a"/><text y="-42" text-anchor="middle" font-size="12" font-weight="bold" fill="#2b1d10">N</text></g>
+    <g transform="translate(60 80)" font-size="12" font-family="Georgia,serif"><rect x="-30" y="-24" width="124" height="68" rx="6" fill="#f5ead0dd" stroke="#4a2f1a" stroke-width="2"/>
+      <text x="-20" y="-6">💨 Wind: West, mäßig</text><text x="-20" y="12">🏆 Gewählt: Lübeck</text><text x="-20" y="30">☠ Piraten-Warnung</text></g>
+  </svg>
+</section>
+
+<!-- ================= 3. FLOTTE + SEESCHLACHT ================= -->
+<section class="view v3">
+  <h2>Flotte</h2>
+  <div class="grid">
+    <div class="card">
+      <div class="row"><b>⛵ Hanse-Kogge I</b><span class="tag g">Im Hafen</span></div>
+      <div class="muted">Kapitän: Hinrich Wulf · Erfahrung ★★☆☆☆</div>
+      <h3>Rumpf</h3><div class="row"><div class="bar"><i style="width:82%"></i></div><span class="muted">82/100</span></div>
+      <h3>Fracht</h3><div class="row"><div class="bar warn"><i style="width:70%"></i></div><span class="muted">140/200</span></div>
+      <h3>Mannschaft</h3><div class="row"><div class="bar"><i style="width:60%"></i></div><span class="muted">18/30</span></div>
+      <div class="muted" style="margin-top:6px">Kanonen 4 · Tempo 5 · Segel Leinen</div>
+    </div>
+    <div class="card">
+      <div class="row"><b>⛵ Hansa-Holk II</b><span class="tag b">Unterwegs → Danzig</span></div>
+      <div class="muted">Kapitän: Marten Brandt · Erfahrung ★★★☆☆</div>
+      <h3>Rumpf</h3><div class="row"><div class="bar bad"><i style="width:35%"></i></div><span class="muted">35/120</span></div>
+      <h3>Fracht</h3><div class="row"><div class="bar"><i style="width:95%"></i></div><span class="muted">285/300</span></div>
+      <h3>Mannschaft</h3><div class="row"><div class="bar"><i style="width:80%"></i></div><span class="muted">32/40</span></div>
+      <div class="muted" style="margin-top:6px">Kanonen 8 · Tempo 4 · Segel Hanf</div>
+    </div>
+  </div>
+
+  <h2>⚔ Taktische Seeschlacht <span class="muted">(Vorschau · offene See 16×16 ► hier verkleinert 10×8)</span></h2>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="battle" style="height:min(78vh,430px)">
+      <div class="field">
+        <div class="hud">
+          <div class="hudbox"><b>Deine Flotte</b><br>Kogge I · AP 5/6 · Rumpf 82</div>
+          <div class="hudbox" style="text-align:right"><b>Piraten</b><br>Kaperschiff · Rumpf 60 · Crew 14</div>
+        </div>
+        <svg class="scene" viewBox="0 0 800 440" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Seeschlacht Raster">
+          <rect width="800" height="440" fill="#2f5d7c"/>
+          <g stroke="#ffffff30" stroke-width="1.5"><path d="M0 55H800M0 110H800M0 165H800M0 220H800M0 275H800M0 330H800M0 385H800M80 0V440M160 0V440M240 0V440M320 0V440M400 0V440M480 0V440M560 0V440M640 0V440M720 0V440"/></g>
+          <!-- Reichweite -->
+          <g fill="#d9a52144" stroke="#d9a521" stroke-width="2"><rect x="160" y="165" width="80" height="55"/><rect x="240" y="165" width="80" height="55"/><rect x="240" y="220" width="80" height="55"/><rect x="160" y="275" width="80" height="55"/><rect x="240" y="275" width="80" height="55"/><rect x="320" y="220" width="80" height="55" fill="#8c2f2466" stroke="#8c2f24"/></g>
+          <!-- Insel -->
+          <path d="M520 60q50-20 90 10t10 55q-50 20-90-10z" fill="#d9c58c" stroke="#6b4426" stroke-width="3"/>
+          <!-- Eigenes Schiff -->
+          <g transform="translate(200 247)"><path d="M-30 8q30 14 60 0l-8-14h-44z" fill="#6b4426" stroke="#1d120a" stroke-width="3"/><path d="M0 -6v-34" stroke="#1d120a" stroke-width="3"/><path d="M-4-38h26l-6 28h-20z" fill="#f5ead0" stroke="#1d120a" stroke-width="2"/><path d="M0-42l14 4-14 5z" fill="#d9a521"/></g>
+          <circle cx="200" cy="247" r="40" fill="none" stroke="#d9a521" stroke-width="3" stroke-dasharray="5 4"/>
+          <!-- Feind -->
+          <g transform="translate(360 247)"><path d="M-30 8q30 14 60 0l-8-14h-44z" fill="#2e1c0e" stroke="#000" stroke-width="3"/><path d="M0 -6v-34" stroke="#000" stroke-width="3"/><path d="M-22-38h26l6 28h-20z" fill="#3a3a3a" stroke="#000" stroke-width="2"/><path d="M0-42l-14 4 14 5z" fill="#b0432f"/><text y="-48" text-anchor="middle" font-size="16">☠</text></g>
+          <!-- Kanonen-Linie -->
+          <path d="M232 247L328 247" stroke="#f5ead0" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round"/>
+          <!-- Wind -->
+          <g transform="translate(700 380)"><circle r="34" fill="#f5ead0dd" stroke="#4a2f1a" stroke-width="3"/><path d="M-18 0H14M14 0l-9-8M14 0l-9 8" stroke="#2c4f6b" stroke-width="5" stroke-linecap="round" fill="none"/></g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 4. BETRIEBE ================= -->
+<section class="view v4">
+  <h2>Betriebe &amp; Produktionsketten</h2>
+  <div class="card">
+    <h3>Dreistufiges Produktionsmodell</h3>
+    <div class="tier"><span class="muted" style="width:100%">① Rohstoffe</span>
+      <span class="good">🌾 Getreide</span><span class="good">🪵 Holz</span><span class="good">🌿 Hanf</span><span class="good">🐑 Wolle</span><span class="good">⛏ Eisenerz</span><span class="good">🧂 Salz</span><span class="good">🐄 Vieh</span><span class="good">🐟 Fisch</span></div>
+    <div class="arrow">▼</div>
+    <div class="tier"><span class="muted" style="width:100%">② Zwischengüter</span>
+      <span class="good">🛢 Pech &amp; Bauholz</span><span class="good">🪢 Seile &amp; Takelage</span><span class="good">🔨 Eisenwerkzeug</span></div>
+    <div class="arrow">▼</div>
+    <div class="tier"><span class="muted" style="width:100%">③ Endgüter</span>
+      <span class="good">🍺 Bier</span><span class="good">👘 Tuch &amp; Kleidung</span><span class="good">🐟 Pökelfisch</span><span class="good">🥩 Pökelfleisch</span></div>
+  </div>
+  <div class="grid">
+    <div class="card"><div class="row"><b>🍺 Brauerei · Lübeck</b><span class="tag g">Läuft</span></div>
+      <div class="muted">Getreide ✔ · Holz ✔</div>
+      <h3>Auslastung</h3><div class="row"><div class="bar"><i style="width:90%"></i></div><span class="muted">90 %</span></div>
+      <div class="muted" style="margin-top:6px">+ 24 Fass Bier / Woche</div></div>
+    <div class="card"><div class="row"><b>🔨 Schmiede · Lübeck</b><span class="tag r">Stockt</span></div>
+      <div class="muted">Eisenerz ✔ · <span style="color:var(--red)">Holz ✘ fehlt</span></div>
+      <h3>Auslastung</h3><div class="row"><div class="bar bad"><i style="width:15%"></i></div><span class="muted">15 %</span></div>
+      <div class="muted" style="margin-top:6px">⚠ Folgeproduktion betroffen: Tuchmacherei</div></div>
+    <div class="card"><div class="row"><b>👘 Tuchmacherei · Brügge</b><span class="tag" style="background:var(--gold);color:var(--ink)">Bau 60 %</span></div>
+      <div class="muted">Wolle ✔ · Werkzeug (wartet)</div>
+      <h3>Baufortschritt</h3><div class="row"><div class="bar warn"><i style="width:60%"></i></div><span class="muted">60 %</span></div></div>
+    <div class="card" style="border-style:dashed;display:grid;place-items:center;min-height:130px"><button class="btn gold">＋ Neuen Betrieb errichten</button></div>
+  </div>
+  <h2>Kontor Lübeck · Markt &amp; Lager</h2>
+  <div class="card">
+    <div class="row"><b>🧂 Salz</b><span class="muted">Preis 14 g · Lager 320</span></div>
+    <div class="slider"><div class="track"></div><div class="knob" style="left:38%"></div></div>
+    <div class="row"><span class="muted">Kaufen bis max 15 g</span><span class="tag g">günstig</span></div>
+    <hr style="border:0;border-top:1px dashed var(--wood-l);margin:8px 0">
+    <div class="row"><b>🍺 Bier</b><span class="muted">Preis 46 g · Lager 85</span></div>
+    <div class="slider"><div class="track"></div><div class="knob" style="left:72%"></div></div>
+    <div class="row"><span class="muted">Verkaufen ab min 40 g</span><span class="tag r">teuer</span></div>
+  </div>
+</section>
+
+<!-- ================= 5. PROFIL ================= -->
+<section class="view v5">
+  <h2>Profil &amp; Karriere</h2>
+  <div class="card">
+    <div class="career">
+      <div class="done"><span>🧺</span>Krämer</div>
+      <div class="done"><span>⚖</span>Händler</div>
+      <div class="now"><span>📜</span>Kaufmann</div>
+      <div><span>🏛</span>Ratsherr</div>
+      <div><span>🔔</span>Bürger&shy;meister</div>
+      <div><span>👑</span>Elder&shy;mann</div>
+    </div>
+    <div class="row" style="margin-top:8px"><span class="muted">Fortschritt zum Ratsherr</span><div class="bar warn"><i style="width:58%"></i></div></div>
+  </div>
+  <h2>Handelsroute einrichten <span class="muted">(3 Schritte)</span></h2>
+  <div class="steps">
+    <div class="step"><p><span class="n">1</span><b>Städte</b></p><p style="margin-top:6px">⚓ Lübeck<br><span class="arrow">▼</span><br>⚓ Danzig</p></div>
+    <div class="step"><p><span class="n">2</span><b>Regeln</b></p>
+      <p style="margin-top:6px">🧂 Salz → <b>kaufe</b> bis 15 g<br>🍺 Bier → <b>verkaufe</b> ab 40 g</p></div>
+    <div class="step"><p><span class="n">3</span><b>Zuweisen</b></p><p style="margin-top:6px">⛵ Hanse-Kogge I<br><span class="muted">Kapitän Hinrich Wulf</span></p></div>
+  </div>
+  <div class="actions" style="background:none;border:0;padding:10px 0"><button class="btn gold">▶ Route starten</button><button class="btn ghost">Schutz: Pause unter 1.000 g ✔</button></div>
+
+  <h2>Jahreszeiten &amp; Ereignisse</h2>
+  <div class="grid">
+    <div class="card"><div class="row"><span class="good">🌱 Frühling</span><span class="good">☀ Sommer</span><span class="good">🍂 Herbst</span><span class="good">❄ Winter</span></div>
+      <p class="muted" style="margin-top:6px">Aktuell: Eisschmelze – Riga, Reval &amp; Narva wieder erreichbar.</p></div>
+    <div class="card"><div class="tier">
+      <span class="tag r">☠ Piraten-Blockade</span><span class="tag r">🌾 Dürre</span><span class="tag r">🌊 Überschwemmung</span><span class="tag r">☣ Pest</span>
+      <span class="tag g">🌾 Rekordernte</span><span class="tag g">🎪 Hanse-Messe</span><span class="tag g">💨 Rückenwind</span><span class="tag g">💰 Handelsboom</span></div></div>
+  </div>
+</section>
+
+</main>
+
+<!-- ================= AKTIONSLEISTE ================= -->
+<div class="actions">
+  <button class="btn gold">🏛 Stadt betreten</button>
+  <button class="btn">⚖ Handeln</button>
+  <button class="btn">🔧 Reparieren</button>
+  <button class="btn red">⚓ Ablegen</button>
+  <button class="btn ghost">⚔ Auto-Kampf</button>
+  <button class="btn ghost">🏃 Fliehen</button>
+</div>
+
+<!-- ================= FUSSZEILE ================= -->
+<footer>
+  <label for="t1"><span>🏛️</span>Stadt</label>
+  <label for="t2"><span>🗺️</span>Karte</label>
+  <label for="t3"><span>⛵</span>Flotte</label>
+  <label for="t4"><span>🏭</span>Betriebe</label>
+  <label for="t5"><span>📜</span>Profil</label>
+</footer>
+
+</div>
+</body>
+</html>
