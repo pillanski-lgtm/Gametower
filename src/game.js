@@ -4,7 +4,7 @@ const HH=globalThis.HH=globalThis.HH||{};
 const D=HH.data,sim=HH.sim,X=HH.gfx,SC=HH.scenes;
 const $=s=>document.querySelector(s);
 const SAVE='hanse_save_v1';
-const G={S:null,page:'stadt',speed:1,t:0,acc:0,ui:{sel:'duenn',qty:10,city:'luebeck',diff:'normal'},started:false};
+const G={px:4,Wd:1376,S:null,page:'stadt',speed:1,t:0,acc:0,ui:{sel:'duenn',qty:10,city:'luebeck',diff:'normal'},started:false};
 const fmt=n=>Math.round(n).toLocaleString('de-DE');
 const icon=(n,s)=>`<i class="ic" data-i="${n}" data-s="${s||3}"></i>`;
 const parent={markt:'stadt',kontor:'stadt',gut:'stadt',bilanz:'stadt',gerste:'gut',hopfen:'gut',brunnen:'gut',brauerei:'gut'};
@@ -32,7 +32,7 @@ function pStadt(S){const c=D.cities[S.city];const tips=[];const B=S.b;
 function pMarkt(S){const g=G.ui.sel,q=G.ui.qty,m=S.markets[S.city][g],own=S.kontor.goods[g];
  const qb=sim.quote(S,g,q,'buy'),qs=sim.quote(S,g,Math.min(q,own),'sell');const mid=sim.midPrice(S,S.city,g),base=D.goods[g].base*D.cities[S.city].mult[g];
  const trend=mid>base*1.12?'<span class="up">teuer ▲</span>':mid<base*.88?'<span class="dn">günstig ▼</span>':'normal';
- return{title:'Marktplatz',html:`<div class="slots five">${D.goodOrder.map(k=>`<div class="slot ${k===g?'sel':''}" data-act="sel" data-g="${k}">${icon(D.goods[k].ic,3)}<i>${sim.buyUnit(S,S.city,k,S.markets[S.city][k].stock)} T</i></div>`).join('')}</div>
+ return{title:'Marktplatz',html:`<div class="slots five">${D.goodOrder.map(k=>`<div class="slot ${k===g?'sel':''}" data-act="sel" data-g="${k}">${icon(D.goods[k].ic,4)}<i>${sim.buyUnit(S,S.city,k,S.markets[S.city][k].stock)} T</i></div>`).join('')}</div>
  <h5>${D.goods[g].n}</h5>${chart(S,g)}
  <div class="kv"><span>Kaufpreis</span><b>${sim.buyUnit(S,S.city,g,m.stock)} T</b></div><div class="kv"><span>Verkaufspreis</span><b>${sim.sellUnit(S,S.city,g,m.stock)} T</b></div>
  <div class="kv"><span>Stadt-Lager</span><b>${fmt(m.stock)}</b></div><div class="kv"><span>Dein Kontor</span><b>${fmt(own)}</b></div><div class="kv"><span>Lage</span><b>${trend}</b></div>
@@ -80,7 +80,7 @@ function renderPanel(force){const S=G.S;const pg=PAGES[G.page](S);const html=`<d
  if(!force&&html===lastHTML)return;lastHTML=html;const el=$('#panel');el.innerHTML=html;X.hydrate(el)}
 function renderHot(){const S=G.S;const sc=sceneOf(G.page);const hs=SC.hotspots(S,sc);const key=G.page+JSON.stringify(hs.map(h=>h.id==='gerste'||h.id==='hopfen'||h.id==='brunnen'||h.id==='brauerei'?sim.status(S,h.id).text:''));if(key===lastHot)return;lastHot=key;
  $('#hots').innerHTML=hs.map(h=>{let sub='';if(sc==='gut'){const st=sim.status(S,h.id);sub=`<small class="${st.code}">${st.text}</small>`}
-  return`<button class="hs ${h.off?'off':''}" ${h.off?'disabled':''} style="left:${h.x*4}px;top:${h.y*4}px;width:${h.w*4}px;height:${h.h*4}px" data-act="go" data-p="${h.page||''}"><span>${h.label}${sub}</span></button>`}).join('')}
+  return`<button class="hs ${h.off?'off':''}" ${h.off?'disabled':''} style="left:${h.x*G.px}px;top:${h.y*4}px;width:${h.w*G.px}px;height:${h.h*4}px" data-act="go" data-p="${h.page||''}"><span>${h.label}${sub}</span></button>`}).join('')}
 function renderHUD(){const S=G.S,c=sim.calendar(S.day);$('#dateTxt').textContent=`${c.dom}. ${c.month} ${c.y}`;$('#seasonTxt').textContent=D.seasonNames[c.season];$('#goldTxt').textContent=fmt(S.gold)+' Taler';$('#kontorTxt').textContent=`Kontor ${fmt(sim.used(S))}/${fmt(sim.cap(S))}`;$('#cityTxt').textContent=D.cities[S.city].n;
  document.querySelectorAll('.nav label').forEach(l=>l.classList.toggle('act',l.dataset.p===navOf(G.page)));
  document.querySelectorAll('.sp').forEach(b=>b.classList.toggle('act',+b.dataset.v===G.speed));
@@ -136,16 +136,19 @@ document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if
 document.addEventListener('keydown',e=>{if(e.code==='Space'&&G.started){e.preventDefault();G.speed=G.speed?0:1;renderHUD()}});
 
 /* ---------- Schleife ---------- */
-const view=$('#view'),vctx=view.getContext('2d');let last=performance.now(),fAcc=0,lastSave=0;
+const view=$('#view'),vctx=view.getContext('2d');const DAYMS={1:2500,2:1000,3:400};let last=performance.now(),fAcc=0,lastSave=0;
 function loop(now){const dt=Math.min(250,now-last);last=now;fAcc+=dt;
  if(G.started){const S=G.S;
-  if(G.speed>0){G.acc+=dt*G.speed;const dayMs=1000;let ticked=false;while(G.acc>=dayMs){G.acc-=dayMs;sim.tick(S);ticked=true;if(S.day%30===0&&S.day!==lastSave){lastSave=S.day;save()}}
+  if(G.speed>0){G.acc+=dt;const dayMs=DAYMS[G.speed]||2500;let ticked=false;while(G.acc>=dayMs){G.acc-=dayMs;sim.tick(S);ticked=true;if(S.day%30===0&&S.day!==lastSave){lastSave=S.day;save()}}
    if(ticked){flushToasts();renderHUD();if(!down)renderPanel();renderHot()}}
   if(fAcc>=100){fAcc=0;G.t++;SC.frame(vctx,sceneOf(G.page),S,G.t)}}
  else if(fAcc>=100){fAcc=0;G.t++;menuScene()}
  requestAnimationFrame(loop)}
 let demo=null;function menuScene(){if(!demo)demo=sim.newGame({seed:7});demo.b.brauerei.state='ready';demo.b.brauerei.workers=2;SC.frame(vctx,'stadt',demo,G.t)}
-function fit(){const st=$('#stage');let k=Math.min(innerWidth/1376,innerHeight/768);const dpr=window.devicePixelRatio||1,px=Math.floor(4*k*dpr);if(px>=1)k=px/(4*dpr);/* ganzzahlige Geräte-Pixel pro Spiel-Pixel */st.style.transform='translate(-50%,-50%) scale('+k+')'}
+function fit(){/* Bühne füllt den ganzen Bildschirm: Höhe 768 fest, Breite folgt dem Seitenverhältnis (min. 16:9) */
+ const st=$('#stage'),vw=innerWidth,vh=innerHeight,Wd=Math.max(1376,Math.round(768*vw/vh)),k=Math.min(vw/Wd,vh/768),Wc=Math.ceil(Wd/4);
+ st.style.width=Wd+'px';st.style.transform='translate(-50%,-50%) scale('+k+')';
+ if(view.width!==Wc){view.width=Wc;X.setSize(Wc)}view.style.width=Wd+'px';G.px=Wd/Wc;G.Wd=Wd;lastHot='';if(G.started){renderHot()}}
 addEventListener('resize',fit);fit();
 
 /* ---------- Start ---------- */

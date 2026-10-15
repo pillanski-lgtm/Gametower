@@ -2,7 +2,8 @@
 (function(){
 const HH=globalThis.HH=globalThis.HH||{};
 const X=HH.gfx,D=HH.data,sim=HH.sim;
-const {W,H,seed,pix,rc,dith,line,poly,outline,ell,spr,sky,cloud,hills,tree,brickBlock,gable,timber,stoneHouse,barrel,crate,sack,person,cobbleFn,wallFn,waterBase,smoke,flame,vig,ICONS}=X;
+let W=X.W;
+const {H,seed,pix,rc,dith,line,poly,outline,ell,spr,sky,cloud,hills,tree,brickBlock,gable,timber,stoneHouse,barrel,crate,sack,person,cobbleFn,wallFn,waterBase,smoke,flame,vig,ICONS}=X;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const sw=(t,p)=>Math.floor(t/p)%2;
 
@@ -31,6 +32,7 @@ const stadt={
   poly([[150,92],[250,92],[256,110],[160,106]],cobbleFn());poly([[160,106],[256,110],[256,126],[164,122]],wallFn());
   poly([[0,82],[82,86],[148,108],[152,134],[112,160],[0,176]],cobbleFn());
   poly([[0,176],[112,160],[152,134],[152,142],[116,170],[0,188],[0,192]],wallFn());
+  for(let x=272;x<W;x+=34)timber(x,96+((x/34|0)%2)*2,26,28+((x/34|0)%3)*5,(x/34|0)%2?'#a8452c':'#b4482c');
   tent(72,126,14,'#a42e24');tent(100,130,14,'#2a5a8a');
   [[30,116],[38,120],[34,126],[22,128],[16,134],[62,148],[70,152],[10,158],[22,164]].forEach(p=>barrel(p[0],p[1]));[[50,146],[56,152],[120,140]].forEach(p=>sack(p[0],p[1]));[[40,134],[84,150]].forEach(p=>crate(p[0],p[1]));
   vig()},
@@ -53,9 +55,10 @@ const markt={
   for(let i=0;i<8;i++){const wx=84+i*10;rc(wx,60,4,10,'#1a0e08');rc(wx,58,4,2,'#1a0e08');rc(wx,86,4,16,'#1a0e08');rc(wx,84,4,2,'#1a0e08')}
   [98,125,152].forEach(x=>ell(x,76,2,2,'#f0e0b0'));
   timber(4,108,40,56);timber(42,108,36,50,'#a8452c');gable(178,108,20,50,3,{},r);gable(252,108,22,56,3,{},r);
+  for(let x=282;x<W;x+=34)gable(x,108,28,46+(x%3)*6,3,{},r);
   poly([[0,106],[W,106],[W,H],[0,H]],cobbleFn());
   ell(176,124,18,5,'#7a7a74');ell(176,123,15,4,'#4d7f94');rc(174,106,5,16,'#9a958a');ell(176,106,6,2,'#9a958a');
-  tent(130,122,16,'#a42e24');tent(220,124,16,'#2a5a8a');tent(75,136,18,'#3f7a2a');tent(125,150,20,'#a42e24');tent(225,142,18,'#e8b030');tent(250,130,16,'#a42e24');tent(152,114,12,'#2a5a8a');tent(205,112,12,'#e8b030');
+  tent(130,122,16,'#a42e24');tent(220,124,16,'#2a5a8a');tent(75,136,18,'#3f7a2a');tent(125,150,20,'#a42e24');tent(225,142,18,'#e8b030');tent(250,130,16,'#a42e24');tent(152,114,12,'#2a5a8a');tent(205,112,12,'#e8b030');for(let x=290;x<W;x+=44)tent(x,128+(x%3)*8,16,x%2?'#a42e24':'#2a5a8a');
   for(let i=0;i<14;i++)barrel(14+(r()*220|0),122+(r()*50|0));
   [[140,176],[150,172],[160,178],[170,174],[145,184],[155,186],[165,184],[180,182],[132,182]].forEach(p=>barrel(p[0],p[1]));[[172,188],[190,186]].forEach(p=>crate(p[0],p[1]));[[200,186],[212,184],[206,178]].forEach(p=>sack(p[0],p[1]));
   vig()},
@@ -72,7 +75,7 @@ const kontor={
  key:S=>S.kontor.level+'|'+D.goodOrder.map(g=>pileItems(S,g)).join(','),
  bg(S){rc(0,0,W,H,'#3a2a1e');brickBlock(0,0,W,112,{base:'#8a5a3a',dk:'#5e3a22',lt:'#a8744a'});
   for(let x=0;x<W;x+=46){rc(x,0,4,112,'#3a2210');rc(x+1,0,1,112,'#5a3a1c')}rc(0,28,W,4,'#3a2210');
-  for(const wx of[40,150,240]){rc(wx-1,38,22,30,'#1a1008');rc(wx,39,20,28,'#98c8e8');rc(wx,39,20,3,'#b8dcec');rc(wx+9,39,2,28,'#3a2210');rc(wx,52,20,2,'#3a2210')}
+  for(let wx=40;wx<W;wx+=110){rc(wx-1,38,22,30,'#1a1008');rc(wx,39,20,28,'#98c8e8');rc(wx,39,20,3,'#b8dcec');rc(wx+9,39,2,28,'#3a2210');rc(wx,52,20,2,'#3a2210')}
   for(let y=112;y<H;y++)for(let x=0;x<W;x++)pix(x,y,((x+((y>>3)%2)*10)%20==0||y%8==0)?'#4a2f16':(((x*5+y*3)%13==0)?'#9a6a3a':'#7a5028'));
   rc(0,110,W,3,'#2a170a');
   for(let s=0;s<S.kontor.level+1;s++){const sx=8+s*76;rc(sx,76,64,3,'#5a3a1c');rc(sx,98,64,3,'#5a3a1c');rc(sx+2,76,3,34,'#4a2a14');rc(sx+59,76,3,34,'#4a2a14');for(let i=0;i<4;i++){crate(sx+10+i*13,98);if(i<3)crate(sx+16+i*13,76)}}
@@ -183,7 +186,7 @@ const gerste={
   if(st===5&&wk){const cx=p*W;for(const r of[3,6,9]){const y=Math.round(rowY(r))+2;person(cx,y,'#b02a20',sw(t,4));const k=sw(t,3);line(cx+2,y-4,cx+8,y-(k?6:2),'#c8c8d0');rc(cx+2,y-4,1,5,'#7a4a24')}}
   if(st>=2&&st<=4&&wk){walkers(t,[{x0:20,x1:200,y:Math.round(rowY(4)),v:.12,o:0,c:'#e8b030'},{x0:60,x1:240,y:Math.round(rowY(8)),v:.1,o:50,c:'#3f7a2a'}])}
   // Wagen & Scheune
-  const barn=b.barn;if(barn>0||st===5){const x=((t*.6)%340)-20;wagon(x,60+4,true,'#e8c040',t)}
+  const barn=b.barn;if(barn>0||st===5){const x=((t*.6)%(W+20))-20;wagon(x,60+4,true,'#e8c040',t)}
   const sk=Math.min(8,Math.ceil(barn/30));for(let i=0;i<sk;i++)sack(214+(i%4)*7,100-(i>>2)*6,'#d8b030');
  }};
 
@@ -209,7 +212,7 @@ const hopfen={
    // Draht
    for(let x=10+(r%2)*14;x<W-30;x+=30){line(x,y-Hp,x+30,y-Hp,'#2a1a10')}
   }
-  if(b.barn>0||st===5){const x=((t*.6)%340)-20;wagon(x,64,true,'#a8c850',t)}
+  if(b.barn>0||st===5){const x=((t*.6)%(W+20))-20;wagon(x,64,true,'#a8c850',t)}
   const sk=Math.min(8,Math.ceil(b.barn/12));for(let i=0;i<sk;i++)sack(214+(i%4)*7,100-(i>>2)*6,'#7ab050');
  }};
 
@@ -218,7 +221,7 @@ const brunnen={
  key:S=>S.b.brunnen.level,
  bg(S){farmSky();grass(72,7);
   poly([[60,192],[240,192],[200,100],[110,100]],cobbleFn('#9a8a62','#6e5e3e','#b8a880'));
-  timber(40,100,30,26,'#a8452c');timber(210,96,30,26,'#9a4a2c');
+  timber(40,100,30,26,'#a8452c');timber(210,96,30,26,'#9a4a2c');for(let x=252;x<W;x+=38)timber(x,100,30,24+(x%3)*3,x%2?'#a8452c':'#9a4a2c');
   // Brunnen-Gemäuer
   rc(124,108,52,6,'#2a2a26');for(let y=104;y<126;y++)for(let x=122;x<178;x++){const e=Math.abs((x-150)/28)**2+((y-114)/10)**2;if(e<1){pix(x,y,((x+y)>>1)%3==0?'#a8a8a0':'#7a7a74')}}
   ell(150,112,24,6,'#2a2a26');ell(150,112,21,5,'#1a3a54');ell(150,111,16,3,'#3a6a8a');
@@ -241,7 +244,7 @@ const brunnen={
 const brauerei={
  key:S=>S.b.brauerei.level,
  bg(S){const lv=S.b.brauerei.level;sky(125);cloud(250,22,18);
-  gable(212,126,30,64,4,{});timber(196,126,24,40);gable(244,126,34,58,5,{});
+  gable(212,126,30,64,4,{});timber(196,126,24,40);gable(244,126,34,58,5,{});for(let x=284;x<W;x+=38)gable(x,126,32,54+(x%3)*7,4,{});
   poly([[0,125],[W,125],[W,H],[0,H]],cobbleFn());
   poly([[14,130],[14,30],[48,18],[205,38],[207,130]],'#2a1a10');
   rc(50,34,152,94,'#5a4030');for(let x=56;x<202;x+=20)rc(x,34,3,94,'#2a170a');[56,80,104].forEach(y=>rc(50,y,152,2,'#2a170a'));
@@ -276,7 +279,7 @@ const brauerei={
 const reg={stadt,markt,kontor,gut,gerste,hopfen,brunnen,brauerei};
 const cache={};
 function sceneFor(S,id){if(['gerste','hopfen','brunnen','brauerei'].includes(id)){const st=S.b[id].state;if(st!=='ready')return{sc:plotScene(id),cid:'plot_'+id}}return{sc:reg[id]||stadt,cid:id}}
-function frame(ctx,id,S,t){const{sc,cid}=sceneFor(S,id);const season=sim.calendar(S.day).season;const k=cid+'|'+season+'|'+(sc.key?sc.key(S):'');
+function frame(ctx,id,S,t){const{sc,cid}=sceneFor(S,id);const season=sim.calendar(S.day).season;W=X.W;const k=cid+'|'+season+'|'+W+'|'+(sc.key?sc.key(S):'');
  let c=cache[cid];if(!c||c.k!==k){const cv=c?c.cv:document.createElement('canvas');cv.width=W;cv.height=H;X.use(cv.getContext('2d'));sc.bg(S);X.tint(cv,season);c=cache[cid]={k,cv}}
  X.use(ctx);ctx.drawImage(c.cv,0,0);if(sc.anim)sc.anim(S,t);X.snow(t,season)}
 function hotspots(S,id){const sc=reg[id];return(sc&&sc.hot)||[]}

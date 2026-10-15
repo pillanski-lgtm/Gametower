@@ -1,7 +1,7 @@
 /* Pixel-Grafik-Bausteine (Phase 1): Primitive, Sprites, Icons, Jahreszeiten-Palette */
 (function(){
 const HH=globalThis.HH=globalThis.HH||{};
-const W=344,H=192;
+let W=344;const H=192;
 let g=null;
 const C={k:'#1a1008',d:'#3b2412',b:'#7a4a24',t:'#b9803f',w:'#f0e0b0',r:'#b02a20',R:'#e0503a',o:'#e8902c',y:'#f0c840',g:'#3f7a2a',G:'#7ac04a',u:'#2a5a8a',U:'#5aa0d8',s:'#6e6e78',S:'#c0c0c8',p:'#6a3a7a',n:'#8a8a42'};
 
@@ -114,5 +114,6 @@ function tint(c,season){if(season==='fruehling')return;const x=c.getContext('2d'
   d[i]=r;d[i+1]=gr;d[i+2]=b}x.putImageData(im,0,0)}
 function snow(t,season){if(season!=='winter')return;for(let i=0;i<70;i++){const sp=.25+(i%3)*.15;const x=(i*37+Math.sin((t+i*9)/17)*4+t*0.08)%W,y=(i*53+t*sp*2.2)%H;pix(x,y,'#ffffff');if(i%4==0)pix(x+1,y,'#dfe8f0')}}
 
-HH.gfx={W,H,C,ICONS,seed,use,ctx,pix,rc,dith,line,poly,outline,ell,spr,iconCanvas,hydrate,sky,cloud,hills,tree,brickBlock,gable,timber,stoneHouse,barrel,crate,sack,person,cobbleFn,wallFn,waterBase,smoke,flame,vig,shipRaw,ship,tint,snow,SKY,CL};
+function setSize(w){W=w;HH.gfx.W=w}
+HH.gfx={W,H,setSize,C,ICONS,seed,use,ctx,pix,rc,dith,line,poly,outline,ell,spr,iconCanvas,hydrate,sky,cloud,hills,tree,brickBlock,gable,timber,stoneHouse,barrel,crate,sack,person,cobbleFn,wallFn,waterBase,smoke,flame,vig,shipRaw,ship,tint,snow,SKY,CL};
 })();
