@@ -8,28 +8,38 @@ Ziel: komplettes Spiel als HTML5 (Canvas, Pixel-Art) und als Android-APK. Grundl
 - **Touch zuerst:** alle Tasten ≥ 48 px, keine Hover-Funktionen, Wischen/Zoomen auf der Karte.
 - **Jede Phase endet spielbar** (Demo-Build auf dem Handy) und mit einer Liste „Fertig, wenn …".
 
-## Betriebe – vollständige Liste (15) mit je eigener Seite
+## Betriebe – vollständige Liste (18) mit je eigener Seite
 Jeder Betrieb bekommt: eigene Szene (344×192), Produktions-Panel, 4 Zustände mit Animation, Stufe 1–3 (sichtbarer Ausbau).
 
 | Stufe | Betrieb | Produziert | Benötigt | Signatur-Animation |
 |---|---|---|---|---|
-| Roh | Getreidehof | Getreide | – | Sensenmäher, Garbenwagen, Windbewegung im Feld |
+| Roh | Weizenfeld | Weizen | – | Wachstumsstufen Saat → Halm → Reife, Mähen, Garbenwagen, Wind im Feld |
+| Roh | Gerstenfeld | Gerste | – | wie Weizenfeld, andere Ähre/Farbe, Dreschflegel |
+| Roh | Hopfenfeld | Hopfen | – | Hopfenstangen, Ranken wachsen sichtbar nach oben, Pflücker, Dolden-Körbe |
+| Roh | Brunnen/Wasserwerk | Wasser | – | Eimer hoch/runter, Kurbel, Wasserträger, Fass füllen |
 | Roh | Holzfäller | Holz | – | Axthieb, fallender Baum, Stämme rollen |
 | Roh | Hanffeld | Hanf | – | Ernte, Bündel trocknen |
 | Roh | Schäferei | Wolle | – | Scherer, Schafe laufen, Wollballen |
 | Roh | Eisenmine | Eisenerz | Holz | Hacke, Lorenwagen, Funken |
 | Roh | Saline | Salz | Holz | Siedepfanne dampft, Salzkruste, Rechen |
-| Roh | Viehhof | Vieh | Getreide | Fütterung, Weidewechsel |
+| Roh | Viehhof | Vieh | Weizen | Fütterung, Weidewechsel |
 | Roh | Fischerei | Fisch | – | Boot rudert, Netz einholen, Möwen |
 | Zwischen | Teerofen/Sägewerk | Pech, Bauholz | Holz | Säge, Meiler-Rauch, Teertropfen |
 | Zwischen | Seilerei | Seile/Takelage | Hanf | Seilerbahn, rückwärts laufender Arbeiter |
 | Zwischen | Schmiede | Eisenwerkzeug | Eisenerz, Holz | Hammerschlag, Funken, Glut, Blasebalg |
-| End | Brauerei | Bier | Getreide, Wasser | Kupferkessel blubbert, Fässer rollen (**im Entwurf vorhanden**) |
+| End | Brauerei | Dünnbier (Gerste + Wasser), Starkbier (Gerste + Hopfen + Wasser), Weißbier (Weizen + Hopfen + Wasser) | s. links | Kupferkessel blubbert, Maischen, Hopfen-Zugabe, Fässer rollen (**im Entwurf vorhanden**) |
 | End | Tuchmacherei | Tuch/Kleidung | Wolle, Werkzeug | Webstuhl, Spinnrad, Stoffbahn |
 | End | Pökelei Fisch | Pökelfisch | Fisch, Salz | Salzen, Fässer stapeln |
 | End | Räucherei/Pökelei Fleisch | Pökelfleisch | Vieh, Salz | Rauch, Schlachter, Haken mit Schinken |
 
 **Zustände je Betrieb:** `Läuft` (volle Animation, Tempo = Effizienz) · `Stockt` (fehlendes Vorprodukt: Arbeiter stehen, rotes Symbol, Anzeige *was* fehlt) · `Leerlauf` (kein Lager für Output) · `Ausbau` (Gerüst, Hämmern).
+**Felder (Weizen, Gerste, Hopfen, Hanf) haben zusätzlich einen Wachstumszyklus** mit eigener Seite und sichtbaren Stufen:
+`Brache (Winter) → Aussaat (Frühling) → Wachstum (Sommer, 3 Bilder) → Reife → Ernte (Herbst) → Brache`.
+- Die Stufe hängt vom Spieldatum ab, die Erntemenge von Pflege (Arbeiter), Wetter (Dürre ⇒ Ernte bricht ein, Rekordernte ⇒ Bonus) und Ausbau (Bewässerung, Düngung, Lager/Scheune).
+- Hopfen wächst an Stangen: Ranken wachsen in 6 Bildern bis zur Stangenspitze, danach Pflückzeit.
+- Panel zeigt Fortschrittsbalken des Zyklus, erwartete Erntemenge und Tage bis zur Ernte.
+- Ernte lagert in der Scheune des Betriebs, Fuhrwerke bringen sie zu Kontor/Markt/Brauerei (sichtbar als Transport-Animation).
+
 **Jahreszeiten:** Palettentausch pro Betrieb (Frühling grün, Sommer hell, Herbst orange, Winter Schnee) statt 4× Grafiken.
 **Technik:** Animation = Ebenen: statischer Hintergrund + animierte Overlays (Rauch, Arbeiter, Räder, Feuer) mit 4–8 Frames, 8–12 FPS. Eine `FactoryScene`-Klasse liest Betriebs-JSON, so wird jeder weitere Betrieb nur noch Daten + Spritesheet.
 
@@ -50,6 +60,7 @@ Jeder Betrieb bekommt: eigene Szene (344×192), Produktions-Panel, 4 Zustände m
 
 ## Phase 2 – Simulationskern (≈ 3 Wochen)
 - Spielzeit (Tage, Jahreszeiten, Geschwindigkeit ❚❚/▶/▶▶), Speichern/Laden.
+- Anbau-Modell für Felder (Aussaat-/Erntefenster je Frucht, Ertrag aus Pflege × Wetter × Ausbau).
 - Güter & Lager je Stadt/Kontor/Schiff, Preismodell (Angebot, Nachfrage, Saison, Ereignisse; Preisgrenzen ±), Bevölkerungsverbrauch (Winter ×2 Holz/Bier).
 - Produktionsmodell mit 3 Stufen: Vorprodukt fehlt ⇒ Output bricht ein, Kettenreaktion sichtbar.
 - Tests: Simulation ohne Grafik 10 Spieljahre durchlaufen lassen, Preise bleiben stabil (kein Absturz auf 0/∞).
@@ -63,12 +74,13 @@ Jeder Betrieb bekommt: eigene Szene (344×192), Produktions-Panel, 4 Zustände m
 
 ## Phase 4 – Betriebe (≈ 8–10 Wochen, 3 Teilphasen)
 Pro Betrieb: Szene + 4 Zustände + Stufen 1–3 + Panel (Arbeiter, Effizienz, Lager, Aufwerten) + Sounds. Reihenfolge nach Produktionskette:
-- **4a Rohstoffe (8 Betriebe):** Getreidehof, Holzfäller, Hanffeld, Schäferei, Eisenmine, Saline, Viehhof, Fischerei.
+- **4a Rohstoffe (11 Betriebe):** Weizenfeld, Gerstenfeld, Hopfenfeld, Brunnen, Holzfäller, Hanffeld, Schäferei, Eisenmine, Saline, Viehhof, Fischerei. Zuerst die Brauerei-Zutaten (Gerste, Hopfen, Brunnen, Weizen), damit die Brauerei als erste komplette Kette spielbar ist.
 - **4b Zwischengüter (3 Betriebe):** Teerofen/Sägewerk, Seilerei, Schmiede.
-- **4c Endgüter (4 Betriebe):** Brauerei (Basis steht), Tuchmacherei, Pökelei Fisch, Pökelei Fleisch.
-- Bau-Mechanik: Bauplatz wählen, Kosten, Bauzeit mit Baustellen-Animation, Arbeiter anstellen.
+- **4c Endgüter (4 Betriebe):** Brauerei (Basis steht, Rezepte Dünn-/Stark-/Weißbier), Tuchmacherei, Pökelei Fisch, Pökelei Fleisch.
+- Bau-Mechanik: Bauplatz wählen, Kosten, Bauzeit mit Baustellen-Animation, Arbeiter anstellen. Felder brauchen Flächen (Hof außerhalb der Stadt) mit Größenwahl.
+- **Vertical Slice „Bier“:** Gerstenfeld + Hopfenfeld + Brunnen + Brauerei + Kontor + Markt, komplett mit Animation. Danach erst die übrigen Ketten.
 - Betriebs-Übersicht (Liste aller Betriebe mit Ampel: läuft / stockt / Leerlauf).
-- **Fertig, wenn je Teilphase:** jeder Betrieb hat Seite + alle 4 Zustände + Winter-Variante; Kette läuft in der Simulation; Stocken zeigt die fehlende Ware.
+- **Fertig, wenn je Teilphase:** jeder Betrieb hat Seite + alle 4 Zustände + Winter-Variante, Felder zusätzlich alle Wachstumsstufen; Kette läuft in der Simulation; Stocken zeigt die fehlende Ware.
 
 ## Phase 5 – Schiffe, Werft & Weltkarte (≈ 4 Wochen)
 - Schiffsklassen (Kogge, Holk, Schnigge, Kraweel) mit Werten: Fracht, Tempo, Rumpf, Kanonenplätze, Mannschaft, Kosten.
@@ -110,22 +122,22 @@ Pro Betrieb: Szene + 4 Zustände + Stufen 1–3 + Panel (Arbeiter, Effizienz, La
 |---|---|---|
 | 0–1 | 3–4 Wochen | **M1:** Technik + UI-Kit stehen |
 | 2–3 | 7 Wochen | **M2:** Handel in 2 Städten spielbar |
-| 4 | 8–10 Wochen | **M3:** alle 15 Betriebe mit Animation (Vertical Slice schon nach 4a/Brauerei) |
+| 4 | 10–12 Wochen | **M3:** alle 18 Betriebe mit Animation (Vertical Slice schon nach 4a/Brauerei) |
 | 5–6 | 8 Wochen | **M4:** Reisen + Seeschlacht |
 | 7–8 | 5–6 Wochen | **M5:** Karriere, Autorouten, Ereignisse |
 | 9 | 4–5 Wochen | **M6:** Beta → Release |
-| **Gesamt** | **ca. 8–10 Monate** | |
+| **Gesamt** | **ca. 9–11 Monate** | |
 
 Phase 4 ist der größte Kunstblock. Um parallel zu arbeiten, können Pixel-Art (Betriebe, Städte) und Simulation (Phasen 2, 5–7) getrennt laufen.
 
 ## Risiken & Gegenmaßnahmen
-- **Kunstumfang (15 Betriebe × Zustände × Jahreszeiten):** Palettentausch statt Mehrfach-Grafik; gemeinsame Arbeiter-/Fass-/Rauch-Sprites wiederverwenden.
+- **Kunstumfang (18 Betriebe × Zustände × Jahreszeiten, Felder zusätzlich × Wachstumsstufen):** Palettentausch statt Mehrfach-Grafik; gemeinsame Arbeiter-/Fass-/Rauch-Sprites wiederverwenden.
 - **Balancing der Wirtschaft:** früh (Phase 2) mit Bot-Läufen testen, nicht erst am Ende.
 - **Touch-Bedienung auf kleinen Bildschirmen:** jede neue Seite ab Phase 3 auf einem echten Handy prüfen.
 - **Umfang:** Politik, Konkurrenz-KI und Küstenkämpfe sind verschiebbar, wenn der Zeitplan eng wird. Kern ist Handel + Betriebe + Schiffe.
 
-## Offene Entscheidungen
-1. Einzelspieler-Szenarien oder freies Spiel mit Endziel?
-2. Spielstart: Lübeck fest oder wählbar (Startstadt, Startkapital, Schwierigkeit)?
-3. Monetarisierung (Bezahl-App, Werbung oder gratis)?
-4. Konkurrenz-Händler (KI) im ersten Release oder später?
+## Entscheidungen (geklärt)
+1. **Spielmodus: wählbar** – Szenarien (feste Startlage, Ziel) und freies Spiel (Endziel Eldermann/Wohlstand). Start-Menü in Phase 0/1, Szenarien-Editor-Daten in Phase 7.
+2. **Startstadt: wählbar** – Auswahl vor Spielbeginn zusammen mit Startkapital, Schwierigkeit und erstem Betrieb. Jede Stadt braucht dafür einen eigenen Startzustand (Preise, Bedarf, Nachbarn). Karte der Startstädte in Phase 3.
+3. **Gratis, alles frei** – keine Werbung, keine Käufe, keine Freischaltungen. Das spart Bezahl-/Werbe-SDKs, Store-Abrechnung und Einwilligungs-Dialoge; nur Datenschutzhinweis (keine Datensammlung, Speicherstände lokal).
+4. **Konkurrenz-Händler: später** – nach dem ersten Release (Update). Die Simulation wird aber schon jetzt so gebaut, dass Händler-KI dieselben Aktionen wie der Spieler nutzen kann (gleiche Befehlsschnittstelle).
