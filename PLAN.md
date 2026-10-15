@@ -45,14 +45,14 @@ Jeder Betrieb bekommt: eigene Szene (344×192), Produktions-Panel, 4 Zustände m
 
 ---
 
-## Phase 0 – Fundament (≈ 1–2 Wochen)
+## Phase 0 – Fundament (≈ 1–2 Wochen) — **✔ Version 0.1 umgesetzt**
 - Technik festlegen: Vanilla-JS/TypeScript + Canvas, Bundler (Vite), Capacitor für APK, IndexedDB/Local Storage für Speicherstände.
 - Projektstruktur: `data/` (JSON), `art/` (Spritesheets), `src/` (core, ui, scenes), `tools/` (Sprite-Packer).
 - Pixel-Schrift lokal einbinden (kein Google-Link), Integer-Skalierung, Safe-Area, Landscape fest.
 - Vorhandenes `index.html` in Komponenten zerlegen (HUD, Panel, Szenen-Manager).
 - **Fertig, wenn:** leere Szene läuft als APK auf einem Android-Gerät mit 60 FPS und HUD.
 
-## Phase 1 – Art-Pipeline & UI-Kit (≈ 2 Wochen)
+## Phase 1 – Art-Pipeline & UI-Kit (≈ 2 Wochen) — **✔ Grundlage in v0.1** (Pixel-Primitive, Icons, Palettentausch, UI-Kit; offen: Sprite-Packer, lokale Schrift, Capacitor-APK)
 - Palette einfrieren, Sprite-Konventionen (Raster, Outline, Lichtrichtung oben links), Animations-Format (Spritesheet + JSON).
 - UI-Kit: Panel, Slot, Regler, Tasten (normal/gedrückt/gesperrt), Tooltips, Dialoge, Zahlenstepper, Listen mit Wischen.
 - Tools: Sprite-Vorschau, Paletten-Check, Schneepalette-Generator.
@@ -72,7 +72,7 @@ Jeder Betrieb bekommt: eigene Szene (344×192), Produktions-Panel, 4 Zustände m
 - Handelsfenster (Kaufen/Verkaufen mit Mengenregler, Preisübersicht, Gewinnanzeige), Kontor (Lager, Verwalter), Schenke (Kapitäne/Matrosen anheuern, Gerüchte), Rathaus (Vorräte, Erlasse).
 - **Fertig, wenn:** Spieler kann in 2 Städten handeln, Ware kaufen, einlagern, mit Gewinn verkaufen.
 
-## Phase 4 – Betriebe (≈ 8–10 Wochen, 3 Teilphasen)
+## Phase 4 – Betriebe — **Vertical Slice „Bier“ in v0.1 spielbar** (Brunnen, Gersten-, Hopfenfeld, Brauerei, Kontor, Markt) (≈ 8–10 Wochen, 3 Teilphasen)
 Pro Betrieb: Szene + 4 Zustände + Stufen 1–3 + Panel (Arbeiter, Effizienz, Lager, Aufwerten) + Sounds. Reihenfolge nach Produktionskette:
 - **4a Rohstoffe (11 Betriebe):** Weizenfeld, Gerstenfeld, Hopfenfeld, Brunnen, Holzfäller, Hanffeld, Schäferei, Eisenmine, Saline, Viehhof, Fischerei. Zuerst die Brauerei-Zutaten (Gerste, Hopfen, Brunnen, Weizen), damit die Brauerei als erste komplette Kette spielbar ist.
 - **4b Zwischengüter (3 Betriebe):** Teerofen/Sägewerk, Seilerei, Schmiede.

@@ -1,0 +1,10 @@
+{
+  "name": "hanse-haendler",
+  "version": "0.1.0",
+  "description": "Hanse-Händler & Seefahrer – Pixel-Handelsspiel (HTML5/APK)",
+  "private": true,
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "test": "node tests/sim.test.js"
+  }
+}
