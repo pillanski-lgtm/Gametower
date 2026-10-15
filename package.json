@@ -5,6 +5,13 @@
   "private": true,
   "scripts": {
     "start": "python3 -m http.server 8080",
-    "test": "node tests/sim.test.js"
+    "test": "node tests/sim.test.js",
+    "build:www": "node scripts/build-www.js",
+    "android": "bash scripts/android-setup.sh"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^6.2.2",
+    "@capacitor/cli": "^6.2.2",
+    "@capacitor/core": "^6.2.2"
   }
 }

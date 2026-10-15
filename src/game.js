@@ -143,7 +143,7 @@ function loop(now){const dt=Math.min(250,now-last);last=now;fAcc+=dt;
  else if(fAcc>=100){fAcc=0;G.t++;menuScene()}
  requestAnimationFrame(loop)}
 let demo=null;function menuScene(){if(!demo)demo=sim.newGame({seed:7});demo.b.brauerei.state='ready';demo.b.brauerei.workers=2;SC.frame(vctx,'stadt',demo,G.t)}
-function fit(){const st=$('#stage'),k=Math.min(innerWidth/1376,innerHeight/768);st.style.transform='translate(-50%,-50%) scale('+k+')'}
+function fit(){const st=$('#stage');let k=Math.min(innerWidth/1376,innerHeight/768);const dpr=window.devicePixelRatio||1,px=Math.floor(4*k*dpr);if(px>=1)k=px/(4*dpr);/* ganzzahlige Geräte-Pixel pro Spiel-Pixel */st.style.transform='translate(-50%,-50%) scale('+k+')'}
 addEventListener('resize',fit);fit();
 
 /* ---------- Start ---------- */

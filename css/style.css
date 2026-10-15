@@ -1,3 +1,5 @@
+@font-face{font-family:'Pixelify Sans';font-weight:500;src:url(../fonts/PixelifySans-500.ttf) format('truetype');font-display:block}
+@font-face{font-family:'Pixelify Sans';font-weight:600 700;src:url(../fonts/PixelifySans-700.ttf) format('truetype');font-display:block}
 :root{--k:#1a1008;--d:#3b2412;--b:#5a3a22;--m:#7a4a24;--t:#b9803f;--gold:#e8b030;--pa:#e8d49a;--ink:#2b1d10;--red:#b02a20;--grn:#3f7a2a}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:#0b0704;overflow:hidden;font-family:'Pixelify Sans','Courier New',monospace;font-weight:600;color:var(--ink);-webkit-font-smoothing:none;touch-action:manipulation}

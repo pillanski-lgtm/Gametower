@@ -124,29 +124,36 @@ const gut={
 gut.hot=[{id:'gerste',label:'Gerstenfeld',x:6,y:98,w:96,h:52,page:'gerste'},{id:'hopfen',label:'Hopfenfeld',x:108,y:94,w:50,h:56,page:'hopfen'},{id:'brunnen',label:'Brunnen',x:204,y:104,w:30,h:36,page:'brunnen'},{id:'brauerei',label:'Brauerei',x:194,y:44,w:44,h:56,page:'brauerei'}];
 
 /* ---------- Baustelle (für jeden Betrieb, solange nicht fertig) ---------- */
+function hammerer(x,y,col,t,ph){const h=sw(t+ph,3);person(x,y,col,h);rc(x+3,y-8+(h?0:3),1,6,'#7a4a24');rc(x+2,y-9+(h?0:3),3,2,'#c8c8d0');if(h)pix(x+6,y-3,'#f8e070')}
+function ox(x,y,t){const s=sw(t,6);rc(x,y-8,16,8,'#6a4426');rc(x+14,y-12,6,6,'#6a4426');rc(x+19,y-13,2,2,'#e8dcc0');rc(x+15,y-14,2,3,'#e8dcc0');rc(x+2,y,2,5+s,'#4a2a14');rc(x+6,y,2,5+(1-s),'#4a2a14');rc(x+12,y,2,5+s,'#4a2a14');rc(x+15,y,2,5+(1-s),'#4a2a14');rc(x-3,y-7,3,2,'#4a2a14')}
 function plotScene(id){const kind=D.buildings[id].kind;return{
  key:S=>bst(S,id),
  bg(S){farmSky();grass(76,6);
   poly([[40,92],[210,92],[240,176],[10,176]],(x,y)=>((x+y)&1)?'#8a6a3a':'#7a5a2e');
   [[40,92],[210,92],[240,176],[10,176]].forEach(p=>{rc(p[0]-1,p[1]-8,3,10,'#4a2a14');rc(p[0]-1,p[1]-8,3,2,'#b9803f')});
-  for(let i=0;i<5;i++){crate(246-(i%3)*11,150-(i>>1)*8);} for(let i=0;i<6;i++)rc(230+(i%3)*3,170-(i>>1)*3,10,2,'#9a7444');
-  for(let i=0;i<4;i++)ell(24+i*5,168-(i%2)*2,3,2,'#8a8a82');
-  if(bst(S,id)==='none'){sign(125,100)}
+  for(let i=0;i<5;i++)crate(246-(i%3)*11,150-(i>>1)*8);for(let i=0;i<6;i++)rc(230+(i%3)*3,170-(i>>1)*3,10,2,'#9a7444');
+  for(let i=0;i<5;i++)ell(24+i*5,168-(i%2)*2,3,2,'#8a8a82');
+  for(let i=0;i<4;i++)rc(200+i*3,98+(i%2),14,2,'#9a7444');
+  if(bst(S,id)==='none'){sign(125,100);line(40,92,210,92,'#c8b890');line(210,92,240,176,'#c8b890');line(240,176,10,176,'#c8b890');line(10,176,40,92,'#c8b890')}
   vig()},
- anim(S,t){const b=S.b[id],p=b.state==='building'?1-b.buildLeft/D.buildings[id].buildDays:0;if(b.state==='none')return;
-  const h=sw(t,3);
-  if(kind==='field'){for(let r=0;r<10;r++){const y=100+r*7,xe=30+p*190;for(let x=30;x<xe-r*0;x+=2)rc(x+r*2,y,2,1,'#5a3a1e')}
-   const px=30+p*190;person(px,112+0,'#e8b030',h);rc(px+3,102+h*3,1,8,'#7a4a24');rc(px+2,110,3,1,'#c8c8d0');person(px-18,140,'#6a3a7a',1-h);}
-  else if(kind==='well'){const n=Math.floor(p*6);for(let i=0;i<n;i++){const rw=Math.floor(i/3);for(let j=0;j<3;j++)if(i%3===j||true){}}
-   const rows=Math.floor(p*7);for(let r=0;r<rows;r++){ell(125,150-r*4,22-r,6-(r>3?1:0),(x,y)=>(((x+y)>>1)%3==0?'#a8a8a0':'#7a7a74'));ell(125,150-r*4-1,16-r,3,'#3b2412')}
-   person(80,150,'#6a3a7a',h);sack(84,146);person(168,152,'#e8b030',1-h);rc(172,146+h*3,1,5,'#c8c8d0')}
-  else{const hgt=Math.floor(p*52),px=[60,100,140,180];
+ anim(S,t){const b=S.b[id],p=b.state==='building'?1-b.buildLeft/D.buildings[id].buildDays:0;if(b.state==='none')return;const h=sw(t,3);
+  if(id==='gerste'){const px=40+p*180;for(let r=0;r<9;r++){const y=100+r*8;for(let x=40;x<px-r*2;x+=2)rc(x+r*3,y,2,1,'#4a2a14'),rc(x+r*3,y+1,2,1,'#6a4a2a')}
+   ox(px-6,112,t);rc(px+14,108,10,1,'#4a2a14');rc(px+22,108,2,6,'#8a8a82');person(px-24,114,'#6a3a7a',h);hammerer(60,150,'#e8b030',t,0);person(110,140,'#2a5a8a',1-h);sack(120,142);}
+  else if(id==='hopfen'){const n=Math.floor(p*9);for(let i=0;i<9;i++){const x=48+i*20,hgt=i<n?40:(i===n?Math.round((p*9-n)*40):0);if(hgt>0){rc(x,150-hgt,3,hgt,'#6a4a2a');rc(x,150-hgt,3,1,'#9a7444')}}
+   if(n>2)line(48,150-40,48+Math.min(n,8)*20,150-40,'#2a1a10');const cx=48+Math.min(n,8)*20+10;hammerer(cx,156,'#c9a227',t,1);person(cx+18,158,'#2a5a8a',h);rc(cx+22,146+h*2,2,12,'#6a4a2a');hammerer(100,166,'#6a3a7a',t,2)}
+  else if(id==='brunnen'){const rows=Math.floor(p*7);for(let r=0;r<rows;r++){ell(125,150-r*4,22-r,6-(r>3?1:0),(x,y)=>(((x+y)>>1)%3==0?'#a8a8a0':'#7a7a74'));ell(125,150-r*4-1,16-r,3,'#3b2412')}
+   rc(86,90,3,64,'#5a3a1c');rc(160,90,3,64,'#5a3a1c');rc(84,88,82,3,'#5a3a1c');line(125,91,125,120+Math.round(Math.sin(t/8)*8),'#c8b890');rc(121,120+Math.round(Math.sin(t/8)*8),8,6,'#8a8a82');
+   hammerer(80,152,'#6a3a7a',t,0);sack(84,146);person(172,154,'#e8b030',1-h);crate(190,150)}
+  else{const hgt=Math.floor(Math.min(1,p/.55)*52),roof=p>.55?Math.min(1,(p-.55)/.3):0,px=[60,100,140,180];
+   if(p>0.03)rc(50,150,140,5,'#8a8a82');if(p>0.03)rc(50,150,140,1,'#b8b8b0');
    for(const x of px){rc(x,150-hgt,4,hgt,'#6a4a2a');rc(x,150-hgt,4,1,'#9a7444')}
-   if(hgt>20){rc(60,150-hgt+4,124,3,'#4a2a14');rc(60,150-Math.floor(hgt*.5),124,3,'#4a2a14')}
-   if(p>.6){poly([[54,150-hgt+4],[122,150-hgt-16],[190,150-hgt+4]],(x,y)=>(y%3==0)?'#7a2a1c':'#a8482e')}
-   rc(50,150,140,5,'#7a7a74');
-   person(80,156,'#c9a227',h);rc(84,146+h*4,2,6,'#c8c8d0');person(130,156,'#2a5a8a',1-h);rc(134,146+(1-h)*4,2,6,'#c8c8d0');person(170,156,'#b02a20',h)}
-  if(sw(t,12))for(let i=0;i<3;i++)pix(120+i*30+((t*3)%12),170-(i%2)*3,'#d8c8a0')}}}
+   if(hgt>20){rc(60,150-hgt+4,124,3,'#4a2a14');rc(60,150-Math.floor(hgt*.5),124,3,'#4a2a14');for(let i=0;i<3;i++)line(64+i*40,150-Math.floor(hgt*.5),104+i*40,150-hgt+6,'#4a2a14')}
+   if(roof>0){const ry=150-hgt-Math.round(roof*18);poly([[54,150-hgt+4],[122,ry],[190,150-hgt+4]],(x,y)=>(y%3==0)?'#7a2a1c':(roof>.8?'#a8482e':'#6a4a2a'));if(roof<=.8){for(let i=0;i<9;i++)line(54+i*15,150-hgt+4,122,ry,'#4a2a14')}}
+   if(p>0.85){rc(62,150-30,120,30,'#8a5a3a');for(let y=150-30;y<150;y+=3)rc(62,y,120,1,'#6a4228')}
+   rc(196,70,3,86,'#5a3a1c');rc(196,70,50,3,'#5a3a1c');line(246,73,246,100+Math.round(Math.sin(t/10)*10),'#c8b890');rc(240,100+Math.round(Math.sin(t/10)*10),12,3,'#6a4a2a');
+   hammerer(80,160,'#c9a227',t,0);hammerer(130,160,'#2a5a8a',t,1);person(172,160,'#b02a20',h);rc(166,148,2,12,'#9a7444');rc(166,148,6,1,'#9a7444')}
+  if(sw(t,12))for(let i=0;i<3;i++)pix(120+i*30+((t*3)%12),170-(i%2)*3,'#d8c8a0');
+  for(let i=0;i<4;i++)if((t+i*6)%18<3)pix(60+i*40+(t%7),140-(i%3)*10,'#e8dcc0')}}}
 
 /* ---------- Gerstenfeld ---------- */
 const FR=12,FY0=84,FY1=186;
@@ -157,9 +164,9 @@ const gerste={
  bg(S){farmSky();grass(76,2);
   stoneHouse(150,92,24,24);timber(176,90,34,28);rc(190,84,12,10,'#d8c8a0');rc(195,86,4,8,'#2a1608');
   vig()},
- anim(S,t){const b=S.b.gerste,f=sim.fieldPhase(S,'gerste'),st=f.stage,p=f.p;
+ anim(S,t){const b=S.b.gerste,f=sim.fieldPhase(S,'gerste'),st=f.stage,p=f.p,winter=sim.calendar(S.day).season==='winter';
   for(let r=0;r<FR;r++){const tt=r/(FR-1),y=Math.round(rowY(r)),rh=Math.max(3,Math.round(4+tt*7)),s=.5+tt*1.1;
-   rc(0,y,W,rh,r%2?'#6a4a2a':'#5a3a1e');
+   rc(0,y,W,rh,r%2?'#6a4a2a':'#5a3a1e');if(winter&&f.stage===0){rc(0,y,W,Math.max(1,rh-2),'#e8f0f6');rc(0,y+rh-2,W,1,'#b8c8d4')}
    const cutX=st===5?p*W:0,sowX=st===1?p*W:0;
    for(let x=0;x<W;x+=3){let h=0,col=null;
     if(st===0){if(f.failed&&((x*7+r*13)%9==0)){h=2;col='#4a6a28'}}

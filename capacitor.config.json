@@ -1,0 +1,7 @@
+{
+  "appId": "de.hanse.haendler",
+  "appName": "Hanse-Händler",
+  "webDir": "www",
+  "backgroundColor": "#000000",
+  "android": { "allowMixedContent": false }
+}
