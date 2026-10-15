@@ -84,3 +84,5 @@ h5{text-align:center;font-size:18px;font-weight:700;margin:8px 0 4px}
 .mgrid{display:grid;grid-template-columns:1fr 1.5fr;gap:24px}
 .mbox .b.city{align-items:flex-start;text-align:left;padding:6px 12px;min-height:60px}.mbox .b.city small{font-size:13px}
 .mbox .two{margin-top:12px}.mbox .two .b{min-height:56px;font-size:21px}
+
+.chart{display:flex;align-items:flex-end;gap:1px;height:36px;margin:2px 0 6px;padding:2px;background:#ecd9a2;border:2px solid var(--m)}.chart u{flex:1;background:var(--m);min-width:2px}.chart u:last-child{background:var(--red)}

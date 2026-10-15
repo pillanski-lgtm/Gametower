@@ -58,7 +58,7 @@ Jeder Betrieb bekommt: eigene Szene (344×192), Produktions-Panel, 4 Zustände m
 - Tools: Sprite-Vorschau, Paletten-Check, Schneepalette-Generator.
 - **Fertig, wenn:** UI-Galerie-Seite zeigt alle Elemente; ein Beispiel-Sprite animiert korrekt.
 
-## Phase 2 – Simulationskern (≈ 3 Wochen)
+## Phase 2 – Simulationskern (≈ 3 Wochen) — **✔ umgesetzt** (siehe README „Simulation“, `npm test`)
 - Spielzeit (Tage, Jahreszeiten, Geschwindigkeit ❚❚/▶/▶▶), Speichern/Laden.
 - Anbau-Modell für Felder (Aussaat-/Erntefenster je Frucht, Ertrag aus Pflege × Wetter × Ausbau).
 - Güter & Lager je Stadt/Kontor/Schiff, Preismodell (Angebot, Nachfrage, Saison, Ereignisse; Preisgrenzen ±), Bevölkerungsverbrauch (Winter ×2 Holz/Bier).

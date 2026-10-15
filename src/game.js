@@ -33,12 +33,13 @@ function pMarkt(S){const g=G.ui.sel,q=G.ui.qty,m=S.markets[S.city][g],own=S.kont
  const qb=sim.quote(S,g,q,'buy'),qs=sim.quote(S,g,Math.min(q,own),'sell');const mid=sim.midPrice(S,S.city,g),base=D.goods[g].base*D.cities[S.city].mult[g];
  const trend=mid>base*1.12?'<span class="up">teuer ▲</span>':mid<base*.88?'<span class="dn">günstig ▼</span>':'normal';
  return{title:'Marktplatz',html:`<div class="slots five">${D.goodOrder.map(k=>`<div class="slot ${k===g?'sel':''}" data-act="sel" data-g="${k}">${icon(D.goods[k].ic,3)}<i>${sim.buyUnit(S,S.city,k,S.markets[S.city][k].stock)} T</i></div>`).join('')}</div>
- <h5>${D.goods[g].n}</h5>
+ <h5>${D.goods[g].n}</h5>${chart(S,g)}
  <div class="kv"><span>Kaufpreis</span><b>${sim.buyUnit(S,S.city,g,m.stock)} T</b></div><div class="kv"><span>Verkaufspreis</span><b>${sim.sellUnit(S,S.city,g,m.stock)} T</b></div>
  <div class="kv"><span>Stadt-Lager</span><b>${fmt(m.stock)}</b></div><div class="kv"><span>Dein Kontor</span><b>${fmt(own)}</b></div><div class="kv"><span>Lage</span><b>${trend}</b></div>
  <div class="row" style="margin-top:6px"><span>Menge</span><span class="stp">${btn('−','qty',{d:{v:-1},cls:'sq'})}<b>${q}</b>${btn('+','qty',{d:{v:1},cls:'sq'})}</span></div>
  <div class="presets">${[1,10,50,100].map(n=>btn(n,'setq',{d:{v:n},cls:'sm '+(q===n?'on':'')})).join('')}</div>
  <div class="two">${btn(`Kaufen<small>${fmt(qb.total)} T</small>`,'buy',{cls:'go',dis:qb.qty<q||qb.total>S.gold||q>sim.free(S)})}${btn(`Verkaufen<small>${fmt(qs.total)} T</small>`,'sell',{cls:'sell',dis:own<=0})}</div>`}}
+function chart(S,g){const h=S.hist[S.city][g].slice(-40);if(h.length<2)return'';const lo=Math.min(...h),hi=Math.max(...h),sp=Math.max(1,hi-lo);return`<div class="chart" title="Preisverlauf">${h.map(v=>`<u style="height:${4+Math.round((v-lo)/sp*28)}px"></u>`).join('')}</div>`}
 function pKontor(S){const cap=sim.cap(S),u=sim.used(S);return{title:'Eigenes Kontor',html:`<div class="meta small">Lager <b>Stufe ${S.kontor.level}</b><br>${fmt(u)} / ${fmt(cap)} Fass belegt</div>${bar(u/cap,u/cap>.9?'bad':u/cap>.7?'warn':'')}
  <div class="inv">${D.goodOrder.map(g=>`<div class="kv">${icon(D.goods[g].ic,3)}<span>${D.goods[g].n}</span><b>${fmt(S.kontor.goods[g])}</b></div>`).join('')}</div>
  <p class="note">Alle Betriebe liefern hier an und holen sich ihre Zutaten von hier.</p>
@@ -55,11 +56,12 @@ function pBuilding(S,id){const c=D.buildings[id],b=S.b[id],st=sim.status(S,id);l
   else if(f.stage===5&&b.workers===0)html+='<p class="warn">⚠ Erntehelfer fehlen – die Ernte verdirbt!</p>';
   else if(f.failed)html+='<p class="warn">Dieses Jahr nicht bestellt. Nächstes Jahr zur Aussaat Arbeiter einstellen.</p>';
   else html+='<p class="note">Außerhalb von Aussaat und Ernte kannst du Arbeiter entlassen und Lohn sparen.</p>'}
- else if(c.kind==='well'){html+=`<div class="kv"><span>Leistung</span><b>${Math.round(c.rate[b.level-1]*Math.min(1,b.workers/c.maxW[b.level-1]))} Wasser/Tag</b></div><div class="kv"><span>Vorrat</span><b>${S.kontor.goods.wasser}/${c.reserve[b.level-1]}</b></div>`}
- else if(c.kind==='brew'){const r=D.recipes[b.recipe];
-  html+=`<div class="tabs">${Object.keys(D.recipes).map(k=>btn(D.recipes[k].n,'recipe',{d:{r:k},cls:'sm '+(b.recipe===k?'on':'')})).join('')}</div>
+ else if(c.kind==='extract'){const gn=D.goods[c.good].n;html+=`<div class="kv"><span>Leistung</span><b>${Math.round(c.rate[b.level-1]*Math.min(1,b.workers/c.maxW[b.level-1]))} ${gn}/Tag</b></div><div class="kv"><span>Vorrat</span><b>${S.kontor.goods[c.good]}/${c.reserve[b.level-1]}</b></div>`}
+ else if(c.kind==='process'){const r=D.recipes[b.recipe];
+  html+=`<div class="tabs">${c.recipes.map(k=>btn(D.recipes[k].n,'recipe',{d:{r:k,id},cls:'sm '+(b.recipe===k?'on':'')})).join('')}</div>
   <div class="recipe">${Object.keys(r.in).map(g=>{const have=S.kontor.goods[g],need=r.in[g];return`<div class="ing ${have>=need?'okk':'bad'}">${icon(D.goods[g].ic,3)}<b>${have}/${need}</b></div>`}).join('<span>+</span>')}<span>→</span><div class="ing">${icon(D.goods[r.good].ic,3)}<b>${r.out}</b></div></div>
-  <div class="kv"><span>Fortschritt</span><b>${Math.round(b.prog*100)}%</b></div>${bar(b.prog)}<div class="kv"><span>Dauer</span><b>${(r.days/D.buildings.brauerei.speed[b.level-1]).toFixed(1)} Tage</b></div>`}
+  <div class="kv"><span>Fortschritt</span><b>${Math.round(b.prog*100)}%</b></div>${bar(b.prog)}<div class="kv"><span>Dauer</span><b>${(r.days/c.speed[b.level-1]).toFixed(1)} Tage</b></div>`}
+ if(st.cause)html+=`<p class="warn">Ursache: ${st.cause}</p>`;
  html+=stepper(id,b,c)+upgBtn(S,id);return{title:c.n,html}}
 const sowText=c=>{const a=sim.calendar(c.sow[0]),b=sim.calendar(c.sow[1]-1);return`${a.dom}. ${a.month.slice(0,3)}. – ${b.dom}. ${b.month.slice(0,3)}.`};
 const expText=(S,id)=>fmt(sim.expectedYield(S,id));
@@ -102,7 +104,7 @@ function act(a,d){const S=G.S;let r=null;
   case'upg':r=sim.upgrade(S,d.id);break;
   case'kupg':r=sim.upgradeKontor(S);break;
   case'wk':sim.setWorkers(S,d.id,S.b[d.id].workers+(+d.v));break;
-  case'recipe':S.b.brauerei.recipe=d.r;S.b.brauerei.running&&0;break;
+  case'recipe':r=sim.setRecipe(S,d.id||G.page,d.r);break;
   case'speed':G.speed=+d.v;break;
   case'save':save();toast('Spiel gespeichert','good');break;
   case'menu':save();showMenu();return;
@@ -129,7 +131,7 @@ document.addEventListener('pointerdown',()=>{down=true});document.addEventListen
 document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el||el.disabled)return;const a=el.dataset.act;const d=el.dataset;
  if(a==='mcity'){G.ui.city=d.v;showMenu();return}if(a==='mdiff'){G.ui.diff=d.v;showMenu();return}if(a==='mode')return;
  if(a==='mstart'){startGame(sim.newGame({city:G.ui.city,diff:G.ui.diff}));return}
- if(a==='mcont'){const s=loadSave();if(s)startGame(s.S,s.page);return}
+ if(a==='mcont'){const s=loadSave();if(s)startGame(sim.migrate(s.S),s.page);return}
  if(!G.started)return;act(a,d)});
 document.addEventListener('keydown',e=>{if(e.code==='Space'&&G.started){e.preventDefault();G.speed=G.speed?0:1;renderHUD()}});
 
