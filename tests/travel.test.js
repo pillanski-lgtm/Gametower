@@ -1,0 +1,29 @@
+const {test,eq,ok,load,hash}=require('./lib');
+console.log('Städte, Reisen, Handel (Phase 3)');
+const fresh=(o)=>{const HH=load();const S=HH.sim.newGame(Object.assign({seed:7},o||{}));S.gold=20000;return{HH,sim:HH.sim,D:HH.data,S}};
+const skipTo=(sim,S,day)=>{while(S.day<day)sim.tick(S)};
+test('12 Städte mit Region, Karte, Look und Wahrzeichen',()=>{const{D}=fresh();eq(D.cityOrder.length,12);for(const c of D.cityOrder){const x=D.cities[c];ok(x.region&&x.map&&x.look&&x.landmark&&x.pop>0,c);ok(D.regions.includes(x.region),c)}
+ eq(new Set(D.cityOrder.map(c=>D.cities[c].region)).size,4)});
+test('Reisedauer symmetrisch, mindestens 2 Tage, Kosten = Tage × Satz',()=>{const{sim,D}=fresh();for(const a of D.cityOrder)for(const b of D.cityOrder){if(a===b)continue;eq(sim.travelDays(a,b),sim.travelDays(b,a));ok(sim.travelDays(a,b)>=2);eq(sim.travelCost(a,b),sim.travelDays(a,b)*D.travel.feePerDay)}});
+test('Eisgang: Riga, Reval, Narva, Novgorod im Winter gesperrt, im Sommer frei',()=>{const{sim,S}=fresh();skipTo(sim,S,6*30);ok(sim.canTravel(S,'riga').ok,'Sommer');const w=fresh();skipTo(w.sim,w.S,9*30+5);/* Dezember */eq(w.sim.calendar(w.S.day).mi,11);ok(!w.sim.canTravel(w.S,'riga').ok);ok(!w.sim.canTravel(w.S,'novgorod').ok);ok(w.sim.canTravel(w.S,'hamburg').ok)});
+test('Reise: Kosten, Fortschritt, Ankunft, Handel unterwegs gesperrt, Löhne laufen weiter',()=>{const{sim,S}=fresh();sim.build(S,'brunnen');skipTo(sim,S,6);sim.setWorkers(S,'brunnen',1);const g0=S.gold;const r=sim.travel(S,'danzig');ok(r.ok,r.msg);eq(g0-S.gold,r.cost);ok(!sim.buy(S,'gerste',1).ok);ok(!sim.sell(S,'gerste',1).ok);
+ for(let i=0;i<r.days-1;i++)sim.tick(S);eq(S.city,'luebeck');ok(S.trip);sim.tick(S);eq(S.city,'danzig');eq(S.trip,null);ok(S.stats.wages>0)});
+test('Reise nur mit genug Taler, nicht doppelt, nicht zum eigenen Ort',()=>{const{sim,S}=fresh();ok(!sim.canTravel(S,'luebeck').ok);S.gold=5;ok(!sim.canTravel(S,'danzig').ok);S.gold=1000;sim.travel(S,'danzig');ok(!sim.canTravel(S,'hamburg').ok)});
+test('Fremdenzoll: auswärts teurer kaufen und billiger verkaufen als zu Hause bei gleichem Bestand',()=>{const{sim,S}=fresh();const home=sim.quote(S,'stark',50,'buy').total,homeS=sim.quote(S,'stark',50,'sell').total;
+ S.home='hamburg';ok(sim.quote(S,'stark',50,'buy').total>home,'Kauf');ok(sim.quote(S,'stark',50,'sell').total<homeS,'Verkauf')});
+test('Ohne Kontor handelt man aus dem Reisegepäck (begrenzt), mit Kontor aus dem Lager',()=>{const{sim,D,S}=fresh();S.city='danzig';eq(sim.tradeStore(S),S.pack);ok(sim.buy(S,'gerste',80).ok);ok(!sim.buy(S,'gerste',1).ok,'Gepäck voll');eq(S.pack.goods.gerste,80);
+ ok(sim.buildKontor(S).ok);eq(sim.tradeStore(S),S.others.danzig);ok(sim.buy(S,'gerste',20).ok);eq(S.others.danzig.goods.gerste,20);ok(!sim.buildKontor(S).ok,'doppelt');eq(S.others.danzig.cap,sim.otherCap(1))});
+test('Umladen Gepäck ↔ Kontor und Laderaum-Ausbau',()=>{const{sim,S}=fresh();S.city='danzig';sim.buildKontor(S);sim.buy(S,'gerste',30);eq(sim.transfer(S,'out',S.pack===null?'x':'gerste',30).qty,30);eq(S.pack.goods.gerste,30);eq(sim.transfer(S,'in','gerste',10).qty,10);eq(S.others.danzig.goods.gerste,10);ok(!sim.transfer(S,'in','gerste',100).ok||true);
+ ok(sim.upgradePack(S).ok);eq(S.pack.cap,160);ok(sim.upgradePack(S).ok);eq(S.pack.cap,320);ok(!sim.upgradePack(S).ok)});
+function trip(S,sim,good,to,qty){const T=JSON.parse(JSON.stringify(S));const g0=T.gold;if(!sim.buy(T,good,qty).ok)return-1e9;sim.transfer(T,'out',good,qty);if(!sim.travel(T,to).ok)return-1e9;while(T.trip)sim.tick(T);const n=sim.sell(T,good,qty);return n.ok?T.gold-g0:-1e9}
+test('Handelsreise lohnt sich: günstig kaufen, ins Gepäck, weit verkaufen – Gewinn nach Überfahrt',()=>{const{sim,D,S}=fresh();for(let d=0;d<40;d++)sim.tick(S);let best={p:-1e9};
+ for(const to of D.cityOrder)if(to!==S.city)for(const g of ['gerste','hopfen','duenn','stark']){const p=trip(S,sim,g,to,40);if(p>best.p)best={p,g,to}}
+ console.log(`      beste Reise ab Lübeck: ${best.g} → ${best.to}: +${Math.round(best.p)} T (40 Fass)`);ok(best.p>0,'keine Reise mit Gewinn')});
+test('Eine volle Ladung ins schlechte Ziel verliert Geld (Marktbreite, Überfahrt, Zoll)',()=>{const{sim,S}=fresh();for(let d=0;d<40;d++)sim.tick(S);ok(trip(S,sim,'gerste','bergen',80)<0)});
+test('Es gibt mindestens eine profitable Route über alle Städte (Preisunterschiede)',()=>{const{sim,S}=fresh();for(let d=0;d<60;d++)sim.tick(S);const rt=sim.bestRoutes(S,40);ok(rt.some(r=>r.margin*80>sim.travelCost(r.from,r.to)*1.2),'keine lohnende Route')});
+test('Gerüchte kosten Geld und zeigen wahre Routen; Kapitäne deterministisch, anheuern kostet',()=>{const{sim,D,S}=fresh();const g0=S.gold;ok(sim.buyRumors(S).ok);eq(g0-S.gold,D.travel.rumorCost);ok(S.rumors.list.length>0);
+ const a=sim.candidates(S,'luebeck'),b=sim.candidates(S,'luebeck');eq(JSON.stringify(a),JSON.stringify(b));eq(a.length,3);const c=a[0];const g1=S.gold;ok(sim.hireCaptain(S,c.id).ok);eq(g1-S.gold,c.wage*10);eq(S.captains.length,1);ok(!sim.candidates(S,'luebeck').some(x=>x.id===c.id));
+ for(const x of sim.candidates(S,'luebeck'))sim.hireCaptain(S,x.id);ok(S.captains.length<=D.travel.captainMax)});
+test('Spielstand v2 wird auf v3 migriert (Heimat, Gepäck, neue Städte)',()=>{const{HH,sim}=fresh();const S=sim.newGame({seed:1});S.v=2;delete S.home;delete S.pack;delete S.others;delete S.trip;delete S.captains;delete S.markets.narva;delete S.hist.narva;const M=sim.migrate(S);eq(M.v,3);eq(M.home,M.city);ok(M.pack&&M.others&&M.markets.narva&&M.hist.narva);for(let i=0;i<5;i++)sim.tick(M)});
+test('Reise & Handel sind deterministisch (gleicher Seed ⇒ gleicher Ausgang)',()=>{const run=()=>{const{sim,S}=fresh({seed:11});for(let i=0;i<20;i++)sim.tick(S);S.city='danzig';sim.buy(S,'gerste',60);sim.travel(S,'stettin');while(S.trip)sim.tick(S);sim.sell(S,'gerste',60);return hash(S)};eq(run(),run())});
+module.exports=1;

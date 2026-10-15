@@ -7,7 +7,7 @@ const SAVE='hanse_save_v1';
 const G={px:4,Wd:1376,S:null,page:'stadt',speed:1,t:0,acc:0,ui:{sel:'duenn',qty:10,city:'luebeck',diff:'normal'},started:false};
 const fmt=n=>Math.round(n).toLocaleString('de-DE');
 const icon=(n,s)=>`<i class="ic" data-i="${n}" data-s="${s||3}"></i>`;
-const parent={markt:'stadt',kontor:'stadt',gut:'stadt',bilanz:'stadt',gerste:'gut',hopfen:'gut',brunnen:'gut',brauerei:'gut'};
+const parent={markt:'stadt',kontor:'stadt',gut:'stadt',bilanz:'stadt',karte:'stadt',werft:'stadt',schenke:'stadt',rathaus:'stadt',gerste:'gut',hopfen:'gut',brunnen:'gut',brauerei:'gut'};
 const navOf=p=>parent[p]==='gut'?'gut':p==='stadt'?'stadt':p;
 
 /* ---------- kleine UI-Bausteine ---------- */
@@ -18,34 +18,74 @@ function stepper(id,b,c){const max=c.maxW[b.level-1];return`<div class="row"><sp
 function upgBtn(S,id){const cost=sim.upgradeCost(S,id);return cost==null?`<div class="note">Höchste Stufe erreicht.</div>`:btn(`Ausbau auf Stufe ${S.b[id].level+1}: ${fmt(cost)} T`,'upg',{d:{id},dis:S.gold<cost})}
 
 /* ---------- Panels ---------- */
+const cname=id=>D.cities[id].n;
+const away=S=>S.city!==S.home;
+const tripWarn=t=>({title:t,html:'<p class="warn">Du bist unterwegs. Sobald du angekommen bist, geht es hier weiter.</p>'});
+const goodsRow=(st)=>D.goodOrder.filter(g=>st.goods[g]>0).map(g=>`<span class="gp">${icon(D.goods[g].ic,2)} ${fmt(st.goods[g])}</span>`).join('')||'<span class="muted">leer</span>';
 function pStadt(S){const c=D.cities[S.city];const tips=[];const B=S.b;
- if(B.brunnen.state==='none')tips.push('Baue einen <b>Brunnen</b> – ohne Wasser kein Bier.');
- if(B.brauerei.state==='none')tips.push('Baue die <b>Brauerei</b> (1.500 T) unter „Betriebe“.');
- if(B.gerste.state==='none')tips.push('Ein <b>Gerstenfeld</b> spart Einkauf. Aussaat bis ca. 30. Mär.');
- for(const id of D.buildOrder)if(B[id].state==='ready'&&B[id].workers===0&&D.buildings[id].kind!=='field')tips.push(`<b>${D.buildings[id].n}</b>: Arbeiter einstellen!`);
- if(S.kontor.goods.duenn+S.kontor.goods.stark>0)tips.push('Du hast Bier im Kontor – <b>verkaufe</b> es im Markt.');
- if(B.brauerei.state==='ready'&&B.brauerei.workers>0&&B.brauerei.missing&&B.brauerei.missing.length)tips.push('Brauerei braucht: '+B.brauerei.missing.map(g=>D.goods[g].n).join(', ')+' – im <b>Markt</b> kaufen.');
- if(!tips.length)tips.push('Alles läuft. Baue aus oder verkaufe Bier zum besten Preis.');
- return{title:c.n,html:`<div class="meta small"><b>${c.n}</b> · ${fmt(c.pop)} Einwohner<br><span class="muted">${c.desc}</span></div>
+ if(S.trip)return{title:'Unterwegs',html:`<p class="note">Überfahrt von <b>${cname(S.trip.from)}</b> nach <b>${cname(S.trip.to)}</b> – noch ${S.trip.left} Tage.</p>`};
+ if(!away(S)){
+  if(B.brunnen.state==='none')tips.push('Baue einen <b>Brunnen</b> – ohne Wasser kein Bier.');
+  if(B.brauerei.state==='none')tips.push('Baue die <b>Brauerei</b> (1.500 T) unter „Betriebe“.');
+  if(B.gerste.state==='none')tips.push('Ein <b>Gerstenfeld</b> spart Einkauf. Aussaat bis ca. 30. Mär.');
+  for(const id of D.buildOrder)if(B[id].state==='ready'&&B[id].workers===0&&D.buildings[id].kind!=='field')tips.push(`<b>${D.buildings[id].n}</b>: Arbeiter einstellen!`);
+  if(S.kontor.goods.duenn+S.kontor.goods.stark>0)tips.push('Du hast Bier im Kontor – <b>verkaufe</b> es im Markt oder fahre in eine Stadt mit besserem Preis (<b>Schenke</b>: Gerüchte).');
+  if(B.brauerei.state==='ready'&&B.brauerei.workers>0&&B.brauerei.missing&&B.brauerei.missing.length)tips.push('Brauerei braucht: '+B.brauerei.missing.map(g=>D.goods[g].n).join(', ')+' – im <b>Markt</b> kaufen.');
+  if(!tips.length)tips.push('Alles läuft. Verkaufe Bier zum besten Preis – oder reise auf der <b>Karte</b> in andere Städte.')}
+ else{tips.push(`Du bist fern der Heimat (<b>${cname(S.home)}</b>): Fremdenzoll ${Math.round(D.travel.foreignFee*100)} % auf alle Geschäfte.`,`Reisegepäck: ${sim.storeUsed(S.pack)}/${S.pack.cap}. Ein <b>Kontor</b> hier (${D.travel.kontorOther.cost} T) gibt dir Lagerplatz.`,'In der <b>Schenke</b> erfährst du, wo sich Handel lohnt. Deine Betriebe laufen zu Hause weiter.')}
+ return{title:c.n,html:`<div class="meta small"><b>${c.n}</b> · ${fmt(c.pop)} Einwohner<br><span class="muted">${c.region} · ${away(S)?'fremde Stadt':'Heimat'}</span><br><span class="muted">${c.desc}</span></div>
  <h5>Preise (Kauf)</h5><div class="prices">${D.goodOrder.map(g=>`<span>${icon(D.goods[g].ic,2)} ${D.goods[g].n}</span><span>${sim.buyUnit(S,S.city,g,S.markets[S.city][g].stock)} T</span>`).join('')}</div>
- <h5>Nächste Schritte</h5><ul class="tips">${tips.slice(0,4).map(t=>`<li>${t}</li>`).join('')}</ul>`}}
-function pMarkt(S){const g=G.ui.sel,q=G.ui.qty,m=S.markets[S.city][g],own=S.kontor.goods[g];
+ <h5>${away(S)?'Hinweise':'Nächste Schritte'}</h5><ul class="tips">${tips.slice(0,4).map(t=>`<li>${t}</li>`).join('')}</ul>`}}
+function pMarkt(S){if(S.trip)return tripWarn('Marktplatz');const g=G.ui.sel,q=G.ui.qty,m=S.markets[S.city][g],ts=sim.tradeStore(S),own=ts.goods[g],hk=sim.hasKontor(S);
  const qb=sim.quote(S,g,q,'buy'),qs=sim.quote(S,g,Math.min(q,own),'sell');const mid=sim.midPrice(S,S.city,g),base=D.goods[g].base*D.cities[S.city].mult[g];
  const trend=mid>base*1.12?'<span class="up">teuer ▲</span>':mid<base*.88?'<span class="dn">günstig ▼</span>':'normal';
- return{title:'Marktplatz',html:`<div class="slots five">${D.goodOrder.map(k=>`<div class="slot ${k===g?'sel':''}" data-act="sel" data-g="${k}">${icon(D.goods[k].ic,4)}<i>${sim.buyUnit(S,S.city,k,S.markets[S.city][k].stock)} T</i></div>`).join('')}</div>
+ const tab=sim.priceTable(S,g).filter(r=>r.city!==S.city);const cheap=[...tab].sort((a,b)=>a.buy-b.buy).slice(0,2),dear=[...tab].sort((a,b)=>b.sell-a.sell).slice(0,2);
+ return{title:'Marktplatz · '+cname(S.city),html:`<div class="slots five">${D.goodOrder.map(k=>`<div class="slot ${k===g?'sel':''}" data-act="sel" data-g="${k}">${icon(D.goods[k].ic,4)}<i>${sim.buyUnit(S,S.city,k,S.markets[S.city][k].stock)} T</i></div>`).join('')}</div>
  <h5>${D.goods[g].n}</h5>${chart(S,g)}
  <div class="kv"><span>Kaufpreis</span><b>${sim.buyUnit(S,S.city,g,m.stock)} T</b></div><div class="kv"><span>Verkaufspreis</span><b>${sim.sellUnit(S,S.city,g,m.stock)} T</b></div>
- <div class="kv"><span>Stadt-Lager</span><b>${fmt(m.stock)}</b></div><div class="kv"><span>Dein Kontor</span><b>${fmt(own)}</b></div><div class="kv"><span>Lage</span><b>${trend}</b></div>
+ <div class="kv"><span>Stadt-Lager</span><b>${fmt(m.stock)}</b></div><div class="kv"><span>${hk?'Dein Kontor':'Reisegepäck'}</span><b>${fmt(own)} <small>(${sim.storeUsed(ts)}/${ts.cap})</small></b></div><div class="kv"><span>Lage</span><b>${trend}</b></div>
  <div class="row" style="margin-top:6px"><span>Menge</span><span class="stp">${btn('−','qty',{d:{v:-1},cls:'sq'})}<b>${q}</b>${btn('+','qty',{d:{v:1},cls:'sq'})}</span></div>
  <div class="presets">${[1,10,50,100].map(n=>btn(n,'setq',{d:{v:n},cls:'sm '+(q===n?'on':'')})).join('')}</div>
- <div class="two">${btn(`Kaufen<small>${fmt(qb.total)} T</small>`,'buy',{cls:'go',dis:qb.qty<q||qb.total>S.gold||q>sim.free(S)})}${btn(`Verkaufen<small>${fmt(qs.total)} T</small>`,'sell',{cls:'sell',dis:own<=0})}</div>`}}
+ <div class="two">${btn(`Kaufen<small>${fmt(qb.total)} T</small>`,'buy',{cls:'go',dis:qb.qty<q||qb.total>S.gold||q>sim.storeFree(ts)})}${btn(`Verkaufen<small>${fmt(qs.total)} T</small>`,'sell',{cls:'sell',dis:own<=0})}</div>
+ <h5>Preise anderswo</h5><div class="prices">${cheap.map(r=>`<span>günstig: ${cname(r.city)} <small>(${r.days} T.)</small></span><span>${r.buy} T</span>`).join('')}${dear.map(r=>`<span>teuer: ${cname(r.city)} <small>(${r.days} T.)</small></span><span>${r.sell} T</span>`).join('')}</div>
+ ${away(S)?`<p class="note">Fremdenzoll ${Math.round(D.travel.foreignFee*100)} % ist in den Preisen enthalten.</p>`:''}`}}
 function chart(S,g){const h=S.hist[S.city][g].slice(-40);if(h.length<2)return'';const lo=Math.min(...h),hi=Math.max(...h),sp=Math.max(1,hi-lo);return`<div class="chart" title="Preisverlauf">${h.map(v=>`<u style="height:${4+Math.round((v-lo)/sp*28)}px"></u>`).join('')}</div>`}
-function pKontor(S){const cap=sim.cap(S),u=sim.used(S);return{title:'Eigenes Kontor',html:`<div class="meta small">Lager <b>Stufe ${S.kontor.level}</b><br>${fmt(u)} / ${fmt(cap)} Fass belegt</div>${bar(u/cap,u/cap>.9?'bad':u/cap>.7?'warn':'')}
- <div class="inv">${D.goodOrder.map(g=>`<div class="kv">${icon(D.goods[g].ic,3)}<span>${D.goods[g].n}</span><b>${fmt(S.kontor.goods[g])}</b></div>`).join('')}</div>
- <p class="note">Alle Betriebe liefern hier an und holen sich ihre Zutaten von hier.</p>
- ${S.kontor.level<3?btn(`Lager erweitern auf ${D.kontor.cap[S.kontor.level]} (${fmt(D.kontor.upg[S.kontor.level])} T)`,'kupg',{dis:S.gold<D.kontor.upg[S.kontor.level]}):'<div class="note">Höchste Stufe.</div>'}`}}
-function pGut(S){const wages=sim.totalWorkers(S)*S.wage;return{title:'Betriebe',html:`<div class="kv"><span>Lohnkosten/Tag</span><b>${wages} T</b></div>`+D.buildOrder.map(id=>{const c=D.buildings[id],b=S.b[id],st=sim.status(S,id);
+function pKontor(S){if(S.trip)return tripWarn('Kontor');const hk=sim.hasKontor(S),st=hk?sim.tradeStore(S):null,pk=S.pack,g=G.ui.sel,q=G.ui.qty;
+ const packBlock=`<h5>Reisegepäck</h5><div class="meta small">${fmt(sim.storeUsed(pk))} / ${pk.cap} Fass · Stufe ${S.packLevel}</div>${bar(sim.storeUsed(pk)/pk.cap)}<div class="gps">${goodsRow(pk)}</div>`;
+ if(!hk)return{title:'Kontor · '+cname(S.city),html:`<p class="note">In ${cname(S.city)} hast du noch kein Kontor. Ohne Kontor handelst du direkt aus dem Reisegepäck.</p><div class="two">${btn(`Kontor eröffnen<small>${D.travel.kontorOther.cost} T</small>`,'bkontor',{cls:'go',dis:S.gold<D.travel.kontorOther.cost})}</div>${packBlock}<p class="note">Das Kontor in ${cname(S.city)} fasst ${sim.otherCap(1)} Fass.</p>`};
+ const cost=sim.upgradeHereCost(S),u=sim.storeUsed(st);
+ return{title:'Kontor · '+cname(S.city),html:`<div class="meta small">${S.city===S.home?'Heimat-Kontor':'Kontor'} <b>Stufe ${st.level}</b><br>${fmt(u)} / ${fmt(st.cap)} Fass belegt</div>${bar(u/st.cap,u/st.cap>.9?'bad':u/st.cap>.7?'warn':'')}
+ <div class="inv">${D.goodOrder.map(k=>`<div class="kv">${icon(D.goods[k].ic,3)}<span>${D.goods[k].n}</span><b>${fmt(st.goods[k])}</b></div>`).join('')}</div>
+ ${S.city===S.home?'<p class="note">Alle Betriebe liefern hier an und holen sich ihre Zutaten von hier.</p>':''}
+ ${cost!=null?btn(`Lager erweitern (${fmt(cost)} T)`,'kup',{dis:S.gold<cost}):'<div class="note">Höchste Stufe.</div>'}
+ ${packBlock}<h5>Umladen: ${D.goods[g].n}</h5><div class="row"><span>Menge</span><span class="stp">${btn('−','qty',{d:{v:-1},cls:'sq'})}<b>${q}</b>${btn('+','qty',{d:{v:1},cls:'sq'})}</span></div>
+ <div class="presets">${D.goodOrder.map(k=>`<button class="b sm ${k===g?'on':''}" data-act="sel" data-g="${k}">${icon(D.goods[k].ic,3)}</button>`).join('')}</div>
+ <div class="two">${btn('→ Gepäck','xout')}${btn('← Kontor','xin')}</div>`}}
+function pGut(S){if(away(S))return{title:'Betriebe',html:`<p class="note">Deine Betriebe stehen in <b>${cname(S.home)}</b> und laufen auch in deiner Abwesenheit weiter (Löhne fallen täglich an).</p><div class="kv"><span>Lohnkosten/Tag</span><b>${sim.totalWorkers(S)*S.wage} T</b></div>`+D.buildOrder.filter(id=>S.b[id].state!=='none').map(id=>{const c=D.buildings[id],st=sim.status(S,id);return`<div class="card2">${icon(c.ic,4)}<div class="cm"><b>${c.n}</b><br>${chip(st.code,st.text)}</div></div>`}).join('')+`<p class="note">Neue Betriebe in anderen Städten folgen in einer späteren Version. Kehre zum Bauen nach ${cname(S.home)} zurück.</p>`};
+ const wages=sim.totalWorkers(S)*S.wage;return{title:'Betriebe',html:`<div class="kv"><span>Lohnkosten/Tag</span><b>${wages} T</b></div>`+D.buildOrder.map(id=>{const c=D.buildings[id],b=S.b[id],st=sim.status(S,id);
   return`<div class="card2">${icon(c.ic,4)}<div class="cm"><b>${c.n}</b>${b.state==='ready'?` <small>Stufe ${b.level}</small>`:''}<br>${chip(st.code,st.text)}</div>${b.state==='none'?btn(`Bauen<small>${fmt(c.cost)} T</small>`,'build',{d:{id},dis:S.gold<c.cost,cls:'go'}):btn('Öffnen','go',{d:{p:id}})}</div>`}).join('')}}
+function pKarte(S){const tr=S.trip;
+ if(tr){const p=1-tr.left/tr.total;return{title:'Auf See',html:`<h5>${cname(tr.from)} → ${cname(tr.to)}</h5>${bar(p)}<div class="kv"><span>Noch</span><b>${tr.left} Tage</b></div><p class="note">Du segelst mit einem Leihschiff. Lagerhaus und Betriebe laufen zu Hause weiter, die Löhne werden täglich bezahlt. Mit ▶▶ vergeht die Reise schneller.</p><h5>Reisegepäck</h5><div class="gps">${goodsRow(S.pack)}</div>`}}
+ const sel=G.ui.dest&&G.ui.dest!==S.city?G.ui.dest:null;let det='';
+ if(sel){const c=D.cities[sel],ct=sim.canTravel(S,sel),days=sim.travelDays(S.city,sel),cost=sim.travelCost(S.city,sel);
+  det=`<div class="card2 sel"><div class="cm"><b>${c.n}</b><br><small>${c.region} · ${fmt(c.pop)} Einw.</small><br><small>${c.desc}</small></div></div><div class="kv"><span>Reisedauer</span><b>${days} Tage</b></div><div class="kv"><span>Überfahrt</span><b>${cost} T</b></div>${ct.ok?'':`<p class="warn">${ct.msg}</p>`}${sim.storeUsed(S.pack)===0?'<p class="note">Dein Reisegepäck ist leer. Lade im <b>Kontor</b> Ware ein (→ Gepäck), sonst fährst du ohne Fracht.</p>':`<div class="gps">Gepäck: ${goodsRow(S.pack)}</div>`}${btn('Reisen','travel',{cls:'go',dis:!ct.ok})}`}
+ else det='<p class="note">Tippe eine Stadt auf der Karte oder in der Liste an. Das Reisegepäck (80–320 Fass) fährt mit; ein Kontor am Ziel gibt dir Lagerplatz.</p>';
+ const list=D.cityOrder.filter(c=>c!==S.city).sort((a,b)=>sim.travelDays(S.city,a)-sim.travelDays(S.city,b));
+ return{title:'Karte · '+cname(S.city),html:`<div class="kv"><span>Standort</span><b>${cname(S.city)}</b></div><div class="kv"><span>Heimat</span><b>${cname(S.home)}</b></div>${det}<h5>Ziele</h5>${list.map(c=>{const ice=D.cities[c].ice&&sim.canTravel(S,c).ice;return`<div class="crow ${c===sel?'sel':''}" data-act="dest" data-c="${c}"><b>${cname(c)}</b><span>${ice?'❄ Eis':sim.travelDays(S.city,c)+' Tage'}</span><span>${sim.travelCost(S.city,c)} T</span></div>`}).join('')}`}}
+function pWerft(S){if(S.trip)return tripWarn('Werft');const l=S.packLevel,next=l<3?D.travel.pack.upg[l]:null;
+ return{title:'Werft · '+cname(S.city),html:`<p class="note">Der Schiffsbauer vermietet dir vorerst Laderaum auf Leihschiffen. Eigene Schiffe baust du in einer späteren Version.</p><h5>Laderaum (Reisegepäck)</h5><div class="kv"><span>Stufe</span><b>${l}</b></div><div class="kv"><span>Fassungsvermögen</span><b>${S.pack.cap} Fass</b></div>${next!=null?btn(`Laderaum auf ${D.travel.pack.cap[l]} (${fmt(next)} T)`,'pup',{dis:S.gold<next}):'<div class="note">Höchste Stufe.</div>'}
+ <h5>Schiffe (bald)</h5>${D.ships.map(sh=>`<div class="card2 off"><div class="cm"><b>${sh.n}</b><br><small>Laderaum ${sh.cap} · Tempo ${sh.speed}</small></div><b>${fmt(sh.cost)} T</b></div>`).join('')}`}}
+function pSchenke(S){if(S.trip)return tripWarn('Schenke');const R=S.rumors,age=R?S.day-R.day:0,cand=sim.candidates(S,S.city);
+ return{title:'Schenke · '+cname(S.city),html:`<p class="note">Hier erzählen Seeleute und Kaufleute, wo sich Handel lohnt.</p>${btn(`Eine Runde ausgeben<small>${D.travel.rumorCost} T</small>`,'rumor',{dis:S.gold<D.travel.rumorCost})}
+ ${R?`<h5>Gerüchte <small class="muted">(Stand: ${age?'vor '+age+' Tagen':'heute'})</small></h5>${R.list.map(r=>`<div class="tip2"><b>${D.goods[r.good].n}</b>: ${cname(r.from)} <small>(${r.buy} T)</small> → ${cname(r.to)} <small>(${r.sell} T)</small><br><small>+${r.margin} T je Fass · ${r.days} Tage</small></div>`).join('')}`:''}
+ <h5>Kapitäne</h5>${S.captains.length?S.captains.map(c=>`<div class="card2 off"><div class="cm"><b>${c.name}</b><br><small>${'★'.repeat(c.exp)}${'☆'.repeat(3-c.exp)} · ${c.wage} T/Tag</small></div><span class="chip laeuft">angeheuert</span></div>`).join(''):''}
+ ${cand.map(c=>`<div class="card2"><div class="cm"><b>${c.name}</b><br><small>${'★'.repeat(c.exp)}${'☆'.repeat(3-c.exp)} · ${c.wage} T/Tag</small></div>${btn(`Anheuern<small>${c.wage*10} T</small>`,'hire',{d:{id:c.id},dis:S.gold<c.wage*10||S.captains.length>=D.travel.captainMax})}</div>`).join('')}
+ <p class="note">Kapitäne führen später deine eigenen Schiffe.</p>`}}
+function pRathaus(S){if(S.trip)return tripWarn('Rathaus');const c=D.cities[S.city];
+ return{title:'Rathaus · '+c.n,html:`<div class="meta small"><b>${c.n}</b> · ${fmt(c.pop)} Einwohner<br><span class="muted">${c.region}</span></div>
+ <h5>Vorräte der Stadt</h5>${D.goodOrder.map(g=>{const st=S.markets[S.city][g].stock,t=c.tgt[g];return`<div class="kv">${icon(D.goods[g].ic,2)}<span>${D.goods[g].n}</span><b>${fmt(st)}</b></div>${bar(st/t/1.5,st/t<.5?'bad':st/t<.8?'warn':'')}`}).join('')}
+ <h5>Hanse-Erlasse</h5>${D.edicts.map(e=>`<div class="tip2"><b>${e.n}</b><br><small>${e.d}</small></div>`).join('')}
+ <h5>Ämter</h5><p class="note">Ratsherr und Bürgermeister kannst du später werden (Phase 7).</p>`}}
 function pBuilding(S,id){const c=D.buildings[id],b=S.b[id],st=sim.status(S,id);let html='';
  if(b.state==='none')return{title:c.n,html:`<p class="note">${c.desc}</p><div class="kv"><span>Baukosten</span><b>${fmt(c.cost)} T</b></div><div class="kv"><span>Bauzeit</span><b>${c.buildDays} Tage</b></div>${c.kind==='field'?'<p class="note">Aussaat: '+sowText(c)+'. Zur Aussaat muss mindestens 1 Arbeiter angestellt sein.</p>':''}<div class="two">${btn('Bauen','build',{d:{id},cls:'go',dis:S.gold<c.cost})}</div>`};
  if(b.state==='building'){const p=1-b.buildLeft/c.buildDays;return{title:c.n,html:`<h5>Baustelle</h5>${bar(p)}<div class="kv"><span>Noch</span><b>${b.buildLeft} Tage</b></div><p class="note">Die Arbeiter errichten ${c.n}. Danach kannst du Arbeiter einstellen.</p>`}}
@@ -68,9 +108,10 @@ const expText=(S,id)=>fmt(sim.expectedYield(S,id));
 function pBilanz(S){const w=sim.totalWorkers(S)*S.wage,s=S.stats;return{title:'Bilanz',html:`<div class="kv"><span>Taler</span><b>${fmt(S.gold)}</b></div><div class="kv"><span>Gewinn seit Start</span><b class="${S.gold-S.start>=0?'up':'dn'}">${fmt(S.gold-S.start)}</b></div>
  <div class="kv"><span>Einnahmen</span><b>${fmt(s.income)}</b></div><div class="kv"><span>Ausgaben</span><b>${fmt(s.expense)}</b></div><div class="kv"><span>Löhne</span><b>${fmt(s.wages)}</b></div><div class="kv"><span>Lohn/Tag</span><b>${w}</b></div>
  <div class="kv"><span>Gebraut</span><b>${fmt(s.brewed)}</b></div><div class="kv"><span>Geerntet</span><b>${fmt(s.harvested)}</b></div>
+ <div class="kv"><span>Standort</span><b>${S.trip?'unterwegs':cname(S.city)}</b></div><div class="kv"><span>Heimat</span><b>${cname(S.home)}</b></div><div class="kv"><span>Kapitäne</span><b>${S.captains.length}</b></div>
  <h5>Chronik</h5><ul class="tips log">${S.log.slice(0,5).map(l=>`<li class="${l.kind}">${l.msg}</li>`).join('')}</ul>
  <div class="two">${btn('Speichern','save')}${btn('Hauptmenü','menu')}</div>`}}
-const PAGES={stadt:pStadt,markt:pMarkt,kontor:pKontor,gut:pGut,bilanz:pBilanz,gerste:S=>pBuilding(S,'gerste'),hopfen:S=>pBuilding(S,'hopfen'),brunnen:S=>pBuilding(S,'brunnen'),brauerei:S=>pBuilding(S,'brauerei')};
+const PAGES={stadt:pStadt,markt:pMarkt,kontor:pKontor,gut:pGut,bilanz:pBilanz,karte:pKarte,werft:pWerft,schenke:pSchenke,rathaus:pRathaus,gerste:S=>pBuilding(S,'gerste'),hopfen:S=>pBuilding(S,'hopfen'),brunnen:S=>pBuilding(S,'brunnen'),brauerei:S=>pBuilding(S,'brauerei')};
 // Szene je Seite
 const sceneOf=p=>p==='bilanz'?'stadt':p;
 
@@ -78,15 +119,15 @@ const sceneOf=p=>p==='bilanz'?'stadt':p;
 let lastHTML='',lastHot='';
 function renderPanel(force){const S=G.S;const pg=PAGES[G.page](S);const html=`<div class="ptitle">${pg.title}<span class="close" data-act="go" data-p="${parent[G.page]||'stadt'}">✕</span></div><div class="pbody">${pg.html}</div>`;
  if(!force&&html===lastHTML)return;lastHTML=html;const el=$('#panel');el.innerHTML=html;X.hydrate(el)}
-function renderHot(){const S=G.S;const sc=sceneOf(G.page);const hs=SC.hotspots(S,sc);const key=G.page+JSON.stringify(hs.map(h=>h.id==='gerste'||h.id==='hopfen'||h.id==='brunnen'||h.id==='brauerei'?sim.status(S,h.id).text:''));if(key===lastHot)return;lastHot=key;
+function renderHot(){const S=G.S;const sc=sceneOf(G.page);const hs=SC.hotspots(S,sc);const key=G.page+'|'+S.city+'|'+JSON.stringify(hs.map(h=>sc==='gut'?sim.status(S,h.id).text:''));if(key===lastHot)return;lastHot=key;
  $('#hots').innerHTML=hs.map(h=>{let sub='';if(sc==='gut'){const st=sim.status(S,h.id);sub=`<small class="${st.code}">${st.text}</small>`}
-  return`<button class="hs ${h.off?'off':''}" ${h.off?'disabled':''} style="left:${h.x*G.px}px;top:${h.y*4}px;width:${h.w*G.px}px;height:${h.h*4}px" data-act="go" data-p="${h.page||''}"><span>${h.label}${sub}</span></button>`}).join('')}
+  const dd=Object.entries(h.d||{}).map(([k,v])=>`data-${k}="${v}"`).join(' ');return`<button class="hs ${h.cls||''} ${h.off?'off':''}" ${h.off?'disabled':''} style="left:${h.x*G.px}px;top:${h.y*4}px;width:${h.w*G.px}px;height:${h.h*4}px" data-act="${h.act||'go'}" data-p="${h.page||''}" ${dd}><span>${h.label}${sub}</span></button>`}).join('')}
 function renderHUD(){const S=G.S,c=sim.calendar(S.day);$('#dateTxt').textContent=`${c.dom}. ${c.month} ${c.y}`;$('#seasonTxt').textContent=D.seasonNames[c.season];$('#goldTxt').textContent=fmt(S.gold)+' Taler';$('#kontorTxt').textContent=`Kontor ${fmt(sim.used(S))}/${fmt(sim.cap(S))}`;$('#cityTxt').textContent=D.cities[S.city].n;
  document.querySelectorAll('.nav label').forEach(l=>l.classList.toggle('act',l.dataset.p===navOf(G.page)));
  document.querySelectorAll('.sp').forEach(b=>b.classList.toggle('act',+b.dataset.v===G.speed));
  const run=D.buildOrder.filter(id=>S.b[id].state==='ready'),act=run.filter(id=>sim.status(S,id).code==='laeuft').length;
  $('#st1').style.width=Math.round(sim.used(S)/sim.cap(S)*100)+'%';$('#st2').style.width=(run.length?Math.round(act/run.length*100):0)+'%';$('#st3').style.width=Math.min(100,Math.round(sim.totalWorkers(S)*S.wage/40*100))+'%'}
-function go(p){if(!PAGES[p])return;G.page=p;lastHTML='';lastHot='';renderAll(true)}
+function go(p){if(!PAGES[p])return;if(G.S&&G.S.trip&&p!=='karte'&&p!=='bilanz'){toast('Du bist unterwegs – erst ankommen.','bad');return}G.page=p;lastHTML='';lastHot='';renderAll(true)}
 function renderAll(force){renderHUD();renderPanel(force);renderHot()}
 function toast(msg,kind){const d=document.createElement('div');d.className='toast '+kind;d.textContent=msg;$('#toasts').appendChild(d);setTimeout(()=>d.remove(),4200);while($('#toasts').children.length>4)$('#toasts').firstChild.remove()}
 function flushToasts(){const S=G.S;while(S.toasts&&S.toasts.length){const t=S.toasts.shift();toast(t.msg,t.kind)}}
@@ -102,10 +143,18 @@ function act(a,d){const S=G.S;let r=null;
   case'sell':r=sim.sell(S,G.ui.sel,G.ui.qty);if(r.ok)toast(`${r.qty}× ${D.goods[G.ui.sel].n} verkauft (+${fmt(r.total)} T)`,'good');break;
   case'build':r=sim.build(S,d.id);if(r.ok){toast(D.buildings[d.id].n+': Bau begonnen','info');if(G.page==='gut')go(d.id)}break;
   case'upg':r=sim.upgrade(S,d.id);break;
-  case'kupg':r=sim.upgradeKontor(S);break;
+  case'kup':r=sim.upgradeHere(S);break;
+  case'dest':G.ui.dest=d.c;break;
+  case'travel':r=sim.travel(S,G.ui.dest);if(r.ok){if(!G.speed)G.speed=1;toast('Überfahrt nach '+cname(G.ui.dest)+' ('+r.days+' Tage)','info');go('karte')}break;
+  case'bkontor':r=sim.buildKontor(S);break;
+  case'pup':r=sim.upgradePack(S);break;
+  case'xin':case'xout':r=sim.transfer(S,a==='xin'?'in':'out',G.ui.sel,G.ui.qty);if(r.ok)toast(r.qty+'× '+D.goods[G.ui.sel].n+(a==='xin'?' ins Kontor':' ins Gepäck'),'info');break;
+  case'rumor':r=sim.buyRumors(S);break;
+  case'hire':r=sim.hireCaptain(S,d.id);break;
   case'wk':sim.setWorkers(S,d.id,S.b[d.id].workers+(+d.v));break;
   case'recipe':r=sim.setRecipe(S,d.id||G.page,d.r);break;
   case'speed':G.speed=+d.v;break;
+  case'ptoggle':{const st=$('#stage');st.classList.toggle('phide');$('#ptoggle').textContent=st.classList.contains('phide')?'◀':'▶';return}
   case'save':save();toast('Spiel gespeichert','good');break;
   case'menu':save();showMenu();return;
  }
@@ -117,13 +166,15 @@ function save(){try{const S=JSON.parse(JSON.stringify(G.S));S.toasts=[];localSto
 function loadSave(){try{const j=localStorage.getItem(SAVE);return j?JSON.parse(j):null}catch(e){return null}}
 
 /* ---------- Menü ---------- */
-function showMenu(){G.started=false;const m=$('#menu');m.classList.add('show');const has=!!loadSave();const ui=G.ui;
- m.innerHTML=`<div class="mbox"><h1>Hanse-Händler<br>&amp; Seefahrer</h1><div class="sub">Erste spielbare Version · Brauerei-Kette</div>
+function showMenu(){G.started=false;const m=$('#menu');m.classList.add('show');const has=!!loadSave();const ui=G.ui,c=D.cities[ui.city];
+ const spec=D.goodOrder.filter(g=>g!=='wasser').map(g=>{const f=c.mult[g]*c.supply[g]>0?c.mult[g]/c.supply[g]:1;return{g,f}});const cheap=spec.filter(x=>x.f<.92).map(x=>D.goods[x.g].n),dear=spec.filter(x=>x.f>1.15).map(x=>D.goods[x.g].n);
+ m.innerHTML=`<div class="mbox"><h1>Hanse-Händler<br>&amp; Seefahrer</h1><div class="sub">Version 0.3 · 12 Städte, Reisen und Bierhandel</div>
  <div class="mgrid"><div><h5>Spielmodus</h5>${btn('Freies Spiel','mode',{cls:'sm on'})}${btn('Szenarien (bald)','mode',{cls:'sm',dis:1})}
  <h5>Schwierigkeit</h5>${Object.keys(D.difficulty).map(k=>btn(`${D.difficulty[k].n} · ${fmt(D.difficulty[k].gold)} T`,'mdiff',{d:{v:k},cls:'sm '+(ui.diff===k?'on':'')})).join('')}</div>
- <div><h5>Startstadt</h5>${Object.keys(D.cities).map(k=>`<button class="b city ${ui.city===k?'on':''}" data-act="mcity" data-v="${k}"><b>${D.cities[k].n}</b><small>${D.cities[k].desc}</small></button>`).join('')}</div></div>
+ <div><h5>Startstadt</h5>${D.regions.map(r=>`<div class="reg"><small>${r}</small>${D.cityOrder.filter(k=>D.cities[k].region===r).map(k=>`<button class="b chipc ${ui.city===k?'on':''}" data-act="mcity" data-v="${k}">${D.cities[k].n}</button>`).join('')}</div>`).join('')}
+ <div class="citycard"><b>${c.n}</b> · ${fmt(c.pop)} Einwohner${c.hard?' · <span class="warnc">schwerer Start (kleiner Markt)</span>':''}<br><small>${c.desc}</small>${cheap.length?`<br><small>Günstig: ${cheap.join(', ')}</small>`:''}${dear.length?`<br><small>Teuer: ${dear.join(', ')}</small>`:''}</div></div></div>
  <div class="two">${btn('Neues Spiel','mstart',{cls:'go'})}${has?btn('Fortsetzen','mcont'):''}</div></div>`;X.hydrate(m)}
-function startGame(S,page){G.S=S;G.page=page||'stadt';G.started=true;G.acc=0;$('#menu').classList.remove('show');lastHTML='';lastHot='';renderAll(true)}
+function startGame(S,page){G.S=S;G.page=S.trip?'karte':(page||'stadt');G.wasTrip=!!S.trip;G.ui.dest=null;G.started=true;G.acc=0;$('#menu').classList.remove('show');lastHTML='';lastHot='';renderAll(true)}
 
 /* ---------- Eingabe ---------- */
 let down=false;
@@ -140,7 +191,7 @@ const view=$('#view'),vctx=view.getContext('2d');const DAYMS={1:2500,2:1000,3:40
 function loop(now){const dt=Math.min(250,now-last);last=now;fAcc+=dt;
  if(G.started){const S=G.S;
   if(G.speed>0){G.acc+=dt;const dayMs=DAYMS[G.speed]||2500;let ticked=false;while(G.acc>=dayMs){G.acc-=dayMs;sim.tick(S);ticked=true;if(S.day%30===0&&S.day!==lastSave){lastSave=S.day;save()}}
-   if(ticked){flushToasts();renderHUD();if(!down)renderPanel();renderHot()}}
+   if(ticked){flushToasts();if(G.wasTrip&&!S.trip){G.page='stadt';lastHTML='';lastHot=''}G.wasTrip=!!S.trip;renderHUD();if(!down)renderPanel();renderHot()}}
   if(fAcc>=100){fAcc=0;G.t++;SC.frame(vctx,sceneOf(G.page),S,G.t)}}
  else if(fAcc>=100){fAcc=0;G.t++;menuScene()}
  requestAnimationFrame(loop)}

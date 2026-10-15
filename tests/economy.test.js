@@ -1,7 +1,7 @@
 const {test,eq,ok,load,bot}=require('./lib');
 console.log('Wirtschaft');
 const HH0=load();
-for(const city of Object.keys(HH0.data.cities)){
+for(const city of HH0.data.cityOrder){
  test(`${city}: Leerlauf-Welt 20 Jahre – kein Gut stirbt aus, keine Preisexplosion`,()=>{const HH=load(),{sim,data:D}=HH;const S=sim.newGame({city,seed:9});const lo={},hi={};
   for(let d=0;d<7200;d++){sim.tick(S);for(const g of D.goodOrder){const m=S.markets[city][g],t=D.cities[city].tgt[g];const r=m.stock/t;lo[g]=Math.min(lo[g]===undefined?9:lo[g],r);hi[g]=Math.max(hi[g]||0,r);
     ok(Number.isFinite(m.stock),'NaN');const p=sim.midPrice(S,city,g),b=D.goods[g].base*D.cities[city].mult[g];ok(p>=b*D.market.minPrice-1e-6&&p<=b*D.market.maxPrice+1e-6,`Preis ${g} ${p}`)}}

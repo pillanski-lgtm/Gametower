@@ -35,13 +35,17 @@ function rawPrice(S,city,g,stock){const c=D.cities[city],M=D.market,base=D.goods
  const f=clamp(Math.pow(c.tgt[g]/(stock+1),D.goods[g].elas),M.minF,M.maxF);
  return clamp(base*f*modOf(S,'price',city,g),base*M.minPrice,base*M.maxPrice)}
 const midPrice=(S,city,g)=>rawPrice(S,city,g,S.markets[city][g].stock);
-const buyUnit=(S,city,g,st)=>Math.max(1,Math.ceil(rawPrice(S,city,g,st)*(1+D.market.spread)));
-const sellUnit=(S,city,g,st)=>Math.max(1,Math.floor(rawPrice(S,city,g,st)*(1-D.market.spread)));
+const feeOf=(S,city)=>city!==S.home?D.travel.foreignFee:0;
+const buyUnit=(S,city,g,st)=>Math.max(1,Math.ceil(rawPrice(S,city,g,st)*(1+D.market.spread+feeOf(S,city))));
+const sellUnit=(S,city,g,st)=>Math.max(1,Math.floor(rawPrice(S,city,g,st)*(1-D.market.spread-feeOf(S,city))));
+/* Handelslager: Kontor der Stadt (Heimat oder gebaut), sonst das Reisegepäck */
+const tradeStore=S=>S.city===S.home?S.kontor:(S.others[S.city]||S.pack);
+const hasKontor=S=>S.city===S.home||!!S.others[S.city];
 function quote(S,g,qty,side){const city=S.city;let st=S.markets[city][g].stock,tot=0;for(let i=0;i<qty;i++){if(side==='buy'){if(st<1)return{total:tot,qty:i,limited:true};tot+=buyUnit(S,city,g,st);st--}else{tot+=sellUnit(S,city,g,st);st++}}return{total:tot,qty,limited:false}}
-function buy(S,g,qty){const q=quote(S,g,qty,'buy');if(q.qty<=0)return{ok:false,msg:'Nicht lieferbar'};if(q.qty>free(S))return{ok:false,msg:'Kontor voll'};if(q.total>S.gold)return{ok:false,msg:'Zu wenig Taler'};
- S.gold-=q.total;S.stats.expense+=q.total;S.markets[S.city][g].stock-=q.qty;S.kontor.goods[g]+=q.qty;return{ok:true,qty:q.qty,total:q.total}}
-function sell(S,g,qty){qty=Math.min(qty,S.kontor.goods[g]);if(qty<=0)return{ok:false,msg:'Nichts zu verkaufen'};
- const q=quote(S,g,qty,'sell');S.gold+=q.total;S.stats.income+=q.total;S.stats.sold+=qty;S.markets[S.city][g].stock+=qty;S.kontor.goods[g]-=qty;return{ok:true,qty,total:q.total}}
+function buy(S,g,qty){if(S.trip)return{ok:false,msg:'Du bist unterwegs'};const ts=tradeStore(S),q=quote(S,g,qty,'buy');if(q.qty<=0)return{ok:false,msg:'Nicht lieferbar'};if(q.qty>storeFree(ts))return{ok:false,msg:hasKontor(S)?'Kontor voll':'Reisegepäck voll'};if(q.total>S.gold)return{ok:false,msg:'Zu wenig Taler'};
+ S.gold-=q.total;S.stats.expense+=q.total;S.markets[S.city][g].stock-=q.qty;ts.goods[g]+=q.qty;return{ok:true,qty:q.qty,total:q.total}}
+function sell(S,g,qty){if(S.trip)return{ok:false,msg:'Du bist unterwegs'};const ts=tradeStore(S);qty=Math.min(qty,ts.goods[g]);if(qty<=0)return{ok:false,msg:'Nichts zu verkaufen'};
+ const q=quote(S,g,qty,'sell');S.gold+=q.total;S.stats.income+=q.total;S.stats.sold+=qty;S.markets[S.city][g].stock+=qty;ts.goods[g]-=qty;return{ok:true,qty,total:q.total}}
 function marketTick(S,mi){for(const city in S.markets)for(const g of D.goodOrder){const m=S.markets[city][g],t=D.cities[city].tgt[g];
   m.stock=Math.max(0,m.stock+dailyProd(S,city,g,mi)-dailyCons(S,city,g,mi)+D.market.k*(t-m.stock)+(rnd(S)-.5)*.03*t);
   const h=S.hist[city][g];h.push(Math.round(midPrice(S,city,g)*10)/10);if(h.length>D.market.histLen)h.shift()}}
@@ -93,22 +97,59 @@ function setRecipe(S,id,r){const c=D.buildings[id];if(c.kind==='process'&&c.reci
 function upgradeKontor(S){const l=S.kontor.level;if(l>=3)return{ok:false,msg:'Maximal'};const cost=D.kontor.upg[l];if(S.gold<cost)return{ok:false,msg:'Zu wenig Taler'};S.gold-=cost;S.stats.expense+=cost;S.kontor.level++;S.kontor.cap=D.kontor.cap[S.kontor.level-1];return{ok:true}}
 const totalWorkers=S=>D.buildOrder.reduce((a,id)=>a+(S.b[id].state==='ready'?S.b[id].workers:0),0);
 
+/* ---------- Reisen (Leihschiff; eigene Schiffe folgen in Phase 5) ---------- */
+const T=D.travel;
+function dist(a,b){const A=D.cities[a].map,B=D.cities[b].map;return Math.hypot(A[0]-B[0],A[1]-B[1])}
+const travelDays=(a,b)=>Math.max(T.minDays,Math.round(dist(a,b)*T.dayPerUnit));
+const travelCost=(a,b)=>travelDays(a,b)*T.feePerDay;
+const isWinter=day=>T.iceMonths.includes(calendar(day).mi);
+function canTravel(S,to){if(S.trip)return{ok:false,msg:'Du bist schon unterwegs'};if(to===S.city)return{ok:false,msg:'Du bist bereits hier'};
+ const days=travelDays(S.city,to);if((D.cities[to].ice&&(isWinter(S.day)||isWinter(S.day+days)))||(D.cities[S.city].ice&&isWinter(S.day)))return{ok:false,msg:'Hafen zugefroren (Eisgang Dez.–Feb.)',ice:true};
+ if(S.gold<travelCost(S.city,to))return{ok:false,msg:'Zu wenig Taler für die Überfahrt'};return{ok:true,days}}
+function travel(S,to){const c=canTravel(S,to);if(!c.ok)return c;const cost=travelCost(S.city,to);S.gold-=cost;S.stats.expense+=cost;S.trip={from:S.city,to,left:c.days,total:c.days};log(S,'Überfahrt nach '+D.cities[to].n+' ('+c.days+' Tage, '+cost+' T)','info');return{ok:true,days:c.days,cost}}
+/* ---------- Kontore in anderen Städten, Reisegepäck, Umladen ---------- */
+function otherCap(level){return Math.round(D.kontor.cap[level-1]*T.kontorOther.capFactor)}
+function buildKontor(S){if(S.trip)return{ok:false,msg:'Du bist unterwegs'};if(S.city===S.home||S.others[S.city])return{ok:false,msg:'Hier gibt es schon ein Kontor'};const cost=T.kontorOther.cost;if(S.gold<cost)return{ok:false,msg:'Zu wenig Taler'};
+ S.gold-=cost;S.stats.expense+=cost;S.others[S.city]=Object.assign({level:1},mkStore(otherCap(1)));log(S,'Kontor in '+D.cities[S.city].n+' eröffnet','good');return{ok:true}}
+function upgradeHere(S){const st=S.city===S.home?S.kontor:S.others[S.city];if(!st)return{ok:false,msg:'Kein Kontor hier'};if(st.level>=3)return{ok:false,msg:'Maximal'};
+ const cost=S.city===S.home?D.kontor.upg[st.level]:T.kontorOther.upg[st.level];if(S.gold<cost)return{ok:false,msg:'Zu wenig Taler'};S.gold-=cost;S.stats.expense+=cost;st.level++;st.cap=S.city===S.home?D.kontor.cap[st.level-1]:otherCap(st.level);return{ok:true}}
+const upgradeHereCost=S=>{const st=S.city===S.home?S.kontor:S.others[S.city];if(!st||st.level>=3)return null;return S.city===S.home?D.kontor.upg[st.level]:T.kontorOther.upg[st.level]};
+function upgradePack(S){const l=S.packLevel;if(l>=3)return{ok:false,msg:'Maximal'};const cost=T.pack.upg[l];if(S.gold<cost)return{ok:false,msg:'Zu wenig Taler'};S.gold-=cost;S.stats.expense+=cost;S.packLevel++;S.pack.cap=T.pack.cap[S.packLevel-1];return{ok:true}}
+/* dir 'in': Gepäck → Kontor hier; 'out': Kontor hier → Gepäck */
+function transfer(S,dir,g,qty){if(S.trip)return{ok:false,msg:'Du bist unterwegs'};if(!hasKontor(S))return{ok:false,msg:'Hier gibt es kein Kontor'};const k=tradeStore(S);const a=dir==='in'?S.pack:k,b=dir==='in'?k:S.pack;const n=storeMove(a,b,g,qty);return n>0?{ok:true,qty:n}:{ok:false,msg:'Nichts zu verladen (leer oder voll)'}}
+/* ---------- Städte-Info: Preisvergleich, Gerüchte, Kapitäne ---------- */
+function priceTable(S,g){return D.cityOrder.map(c=>{const st=S.markets[c][g].stock;const home=c;const fee=c!==S.home?D.travel.foreignFee:0;
+  const raw=rawPrice(S,c,g,st);return{city:c,buy:Math.max(1,Math.ceil(raw*(1+D.market.spread+fee))),sell:Math.max(1,Math.floor(raw*(1-D.market.spread-fee))),stock:Math.round(st),days:c===S.city?0:travelDays(S.city,c)}})}
+function bestRoutes(S,n){const out=[];for(const g of D.goodOrder){if(g==='wasser')continue;const t=priceTable(S,g);for(const a of t)for(const b of t){if(a.city===b.city)continue;const m=b.sell-a.buy;if(m>0)out.push({good:g,from:a.city,to:b.city,margin:m,buy:a.buy,sell:b.sell,days:travelDays(a.city,b.city)})}}
+ out.sort((x,y)=>(y.margin/Math.max(1,y.buy))-(x.margin/Math.max(1,x.buy)));return out.slice(0,n)}
+function buyRumors(S){if(S.trip)return{ok:false,msg:'Du bist unterwegs'};const c=T.rumorCost;if(S.gold<c)return{ok:false,msg:'Zu wenig Taler'};S.gold-=c;S.stats.expense+=c;
+ S.rumors={day:S.day,city:S.city,list:bestRoutes(S,3)};return{ok:true}}
+function hash(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+function candidates(S,city){const per=Math.floor(S.day/90),out=[];for(let i=0;i<3;i++){const h=hash(city+'|'+per+'|'+i+'|'+(S.seed0||0));const exp=1+h%3;out.push({id:city+'-'+per+'-'+i,name:D.captainNames[h%12]+' '+D.captainSur[(h>>>5)%12],exp,wage:6+exp*3+(h>>>9)%4,city})}
+ return out.filter(c=>!S.captains.some(x=>x.id===c.id))}
+function hireCaptain(S,id){if(S.captains.length>=T.captainMax)return{ok:false,msg:'Mehr Kapitäne kannst du dir nicht leisten'};const c=candidates(S,S.city).find(x=>x.id===id);if(!c)return{ok:false,msg:'Nicht mehr verfügbar'};const fee=c.wage*10;if(S.gold<fee)return{ok:false,msg:'Zu wenig Taler'};
+ S.gold-=fee;S.stats.expense+=fee;S.captains.push(c);log(S,'Kapitän '+c.name+' angeheuert','good');return{ok:true}}
+
 /* ---------- Neues Spiel / Migration ---------- */
 function newBuilding(){return{state:'none',level:1,workers:0,buildLeft:0,planted:false,pool:0,poolInit:0,barn:0,recipe:null,prog:0,running:false,hold:0,reason:'',missing:[],full:false}}
 function newGame(o){o=o||{};const cityId=o.city||'luebeck',diff=D.difficulty[o.diff||'normal'];
- const S={v:2,rs:(o.seed===undefined?Date.now():o.seed)|0,day:0,gold:diff.gold,start:diff.gold,city:cityId,diffId:o.diff||'normal',wage:diff.wage,
+ const S={v:3,rs:(o.seed===undefined?Date.now():o.seed)|0,seed0:(o.seed===undefined?Date.now():o.seed)|0,day:0,gold:diff.gold,start:diff.gold,city:cityId,home:cityId,trip:null,others:{},pack:mkStore(T.pack.cap[0]),packLevel:1,captains:[],rumors:null,diffId:o.diff||'normal',wage:diff.wage,
   kontor:Object.assign({level:1},mkStore(D.kontor.cap[0])),markets:{},hist:{},mods:[],b:{},log:[],toasts:[],stats:{income:0,expense:0,wages:0,sold:0,brewed:0,harvested:0,produced:{}}};
  for(const c in D.cities){S.markets[c]={};S.hist[c]={};for(const g of D.goodOrder){S.markets[c][g]={stock:Math.round(D.cities[c].tgt[g]*(.85+rnd(S)*.15))};S.hist[c][g]=[]}}
  for(const id of D.buildOrder){S.b[id]=newBuilding();const c=D.buildings[id];if(c.kind==='process')S.b[id].recipe=c.recipes[0]}
  for(let i=0;i<30;i++)for(const c in S.markets)for(const g of D.goodOrder){const h=S.hist[c][g];h.push(Math.round(midPrice(S,c,g)*10)/10)}
  log(S,'Willkommen! Baue Brunnen, Felder und Brauerei.','info');return S}
-function migrate(S){if(S.v>=2)return S;S.v=2;S.mods=S.mods||[];S.hist=S.hist||{};for(const c in D.cities){S.hist[c]=S.hist[c]||{};for(const g of D.goodOrder)S.hist[c][g]=S.hist[c][g]||[]}
+function migrate(S){if(S.v>=3)return S;if(S.v<2){S.mods=S.mods||[];S.hist=S.hist||{};for(const c in D.cities){S.hist[c]=S.hist[c]||{};for(const g of D.goodOrder)S.hist[c][g]=S.hist[c][g]||[]}
  S.kontor.cap=S.kontor.cap||D.kontor.cap[S.kontor.level-1];for(const id in S.b)if(D.buildings[id].kind==='process'&&!S.b[id].recipe)S.b[id].recipe=D.buildings[id].recipes[0];
- S.stats.produced=S.stats.produced||{};return S}
+ S.stats.produced=S.stats.produced||{}}
+ S.v=3;S.home=S.home||S.city;S.trip=S.trip||null;S.others=S.others||{};S.pack=S.pack||mkStore(T.pack.cap[0]);S.packLevel=S.packLevel||1;S.captains=S.captains||[];S.rumors=S.rumors||null;S.seed0=S.seed0||1;
+ for(const c in D.cities){if(!S.markets[c]){S.markets[c]={};for(const g of D.goodOrder)S.markets[c][g]={stock:Math.round(D.cities[c].tgt[g]*.92)}}if(!S.hist[c]){S.hist[c]={};for(const g of D.goodOrder)S.hist[c][g]=[]}}
+ return S}
 
 /* ---------- Tagesablauf ---------- */
 function tick(S){S.day++;const cal=calendar(S.day),doy=cal.doy;
  S.mods=S.mods.filter(m=>m.until>S.day);
+ if(S.trip){S.trip.left--;if(S.trip.left<=0){S.city=S.trip.to;log(S,'Angekommen in '+D.cities[S.city].n,'good');S.trip=null}}
  marketTick(S,cal.mi);
  const w=totalWorkers(S)*S.wage;if(w>0){if(S.gold>=w){S.gold-=w;S.stats.wages+=w;S.stats.expense+=w}else{for(const id of D.buildOrder)S.b[id].workers=0;log(S,'Kein Geld für Löhne – Arbeiter entlassen!','bad')}}
  for(const id of D.buildOrder){const c=D.buildings[id],b=S.b[id];
@@ -136,6 +177,7 @@ function tick(S){S.day++;const cal=calendar(S.day),doy=cal.doy;
 HH.sim={DPY,tick,calendar,rnd,log,newGame,migrate,
  mkStore,storeUsed,storeFree,storeAdd,storeTake,storeMove,cap,used,free,addGoods,
  modOf,addMod,dailyCons,dailyProd,rawPrice,midPrice,buyUnit,sellUnit,quote,buy,sell,
+ tradeStore,hasKontor,feeOf,dist,travelDays,travelCost,isWinter,canTravel,travel,buildKontor,upgradeHere,upgradeHereCost,otherCap,upgradePack,transfer,priceTable,bestRoutes,buyRumors,candidates,hireCaptain,
  sourcesOf,rootCause,fieldPhase,expectedYield,daysToHarvest,status,build,upgrade,upgradeCost,setWorkers,setRecipe,upgradeKontor,totalWorkers};
 if(typeof module!=='undefined')module.exports=HH;
 })();

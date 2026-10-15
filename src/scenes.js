@@ -70,15 +70,16 @@ markt.hot=[];
 
 /* ---------- Szene: Kontor (Lager, Haufen wachsen mit dem Bestand) ---------- */
 const PILE=[['gerste','sack','#d0bc88'],['hopfen','sack','#7ab050'],['wasser','barrel','#5aa0d8'],['duenn','barrel','#e8c040'],['stark','barrel','#b02a20']];
-function pileItems(S,g){const n=S.kontor.goods[g];return n<=0?0:Math.min(10,Math.ceil(n/(sim.cap(S)*.1)))}
+const kst=S=>sim.hasKontor(S)?sim.tradeStore(S):S.pack;
+function pileItems(S,g){const st=kst(S),n=st.goods[g];return n<=0?0:Math.min(10,Math.ceil(n/(st.cap*.1)))}
 const kontor={
- key:S=>S.kontor.level+'|'+D.goodOrder.map(g=>pileItems(S,g)).join(','),
+ key:S=>(kst(S).level||1)+'|'+S.city+'|'+D.goodOrder.map(g=>pileItems(S,g)).join(','),
  bg(S){rc(0,0,W,H,'#3a2a1e');brickBlock(0,0,W,112,{base:'#8a5a3a',dk:'#5e3a22',lt:'#a8744a'});
   for(let x=0;x<W;x+=46){rc(x,0,4,112,'#3a2210');rc(x+1,0,1,112,'#5a3a1c')}rc(0,28,W,4,'#3a2210');
   for(let wx=40;wx<W;wx+=110){rc(wx-1,38,22,30,'#1a1008');rc(wx,39,20,28,'#98c8e8');rc(wx,39,20,3,'#b8dcec');rc(wx+9,39,2,28,'#3a2210');rc(wx,52,20,2,'#3a2210')}
   for(let y=112;y<H;y++)for(let x=0;x<W;x++)pix(x,y,((x+((y>>3)%2)*10)%20==0||y%8==0)?'#4a2f16':(((x*5+y*3)%13==0)?'#9a6a3a':'#7a5028'));
   rc(0,110,W,3,'#2a170a');
-  for(let s=0;s<S.kontor.level+1;s++){const sx=8+s*76;rc(sx,76,64,3,'#5a3a1c');rc(sx,98,64,3,'#5a3a1c');rc(sx+2,76,3,34,'#4a2a14');rc(sx+59,76,3,34,'#4a2a14');for(let i=0;i<4;i++){crate(sx+10+i*13,98);if(i<3)crate(sx+16+i*13,76)}}
+  for(let s=0;s<(kst(S).level||1)+1;s++){const sx=8+s*76;rc(sx,76,64,3,'#5a3a1c');rc(sx,98,64,3,'#5a3a1c');rc(sx+2,76,3,34,'#4a2a14');rc(sx+59,76,3,34,'#4a2a14');for(let i=0;i<4;i++){crate(sx+10+i*13,98);if(i<3)crate(sx+16+i*13,76)}}
   // Haufen
   PILE.forEach(([g,kind,col],pi)=>{const n=pileItems(S,g),cx=34+pi*46,by=172;const rows=[4,3,2,1];let c=0;for(let r=0;r<4;r++){for(let i=0;i<rows[r];i++){if(c>=n)break;const x=cx+(i-(rows[r]-1)/2)*9,y=by-r*7;if(kind==='sack')sack(x,y,col);else barrel(x,y,col);c++}}
    ell(cx,by+4,18,2,'#00000030');const ic=D.goods[g].ic;spr(cx-4,176,ICONS[ic].map(s=>s));});
@@ -275,13 +276,14 @@ const brauerei={
   const c=((t/10)%420)-40;cloud(c,16,16);
  }};
 
+HH.kit={sw,walkers,tent,cityStyle,spire,person,dust,grass};
 /* ---------- Registry ---------- */
 const reg={stadt,markt,kontor,gut,gerste,hopfen,brunnen,brauerei};
 const cache={};
-function sceneFor(S,id){if(['gerste','hopfen','brunnen','brauerei'].includes(id)){const st=S.b[id].state;if(st!=='ready')return{sc:plotScene(id),cid:'plot_'+id}}return{sc:reg[id]||stadt,cid:id}}
+function sceneFor(S,id){if(id==='stadt'&&HH.cityScene)return{sc:HH.cityScene(S.city),cid:'stadt_'+S.city};if(id==='karte'&&HH.mapScene)return{sc:HH.mapScene,cid:'karte'};if(HH.extraScenes&&HH.extraScenes[id])return{sc:HH.extraScenes[id],cid:id};if(['gerste','hopfen','brunnen','brauerei'].includes(id)){const st=S.b[id].state;if(st!=='ready')return{sc:plotScene(id),cid:'plot_'+id}}return{sc:reg[id]||stadt,cid:id}}
 function frame(ctx,id,S,t){const{sc,cid}=sceneFor(S,id);const season=sim.calendar(S.day).season;W=X.W;const k=cid+'|'+season+'|'+W+'|'+(sc.key?sc.key(S):'');
  let c=cache[cid];if(!c||c.k!==k){const cv=c?c.cv:document.createElement('canvas');cv.width=W;cv.height=H;X.use(cv.getContext('2d'));sc.bg(S);X.tint(cv,season);c=cache[cid]={k,cv}}
  X.use(ctx);ctx.drawImage(c.cv,0,0);if(sc.anim)sc.anim(S,t);X.snow(t,season)}
-function hotspots(S,id){const sc=reg[id];return(sc&&sc.hot)||[]}
+function hotspots(S,id){if(id==='stadt'&&HH.cityScene)return HH.cityScene(S.city).hot;if(id==='karte'&&HH.mapScene)return HH.mapScene.hot;const sc=reg[id];return(sc&&sc.hot)||[]}
 HH.scenes={frame,hotspots,reg};
 })();

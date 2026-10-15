@@ -66,7 +66,7 @@ Jeder Betrieb bekommt: eigene Szene (344×192), Produktions-Panel, 4 Zustände m
 - Tests: Simulation ohne Grafik 10 Spieljahre durchlaufen lassen, Preise bleiben stabil (kein Absturz auf 0/∞).
 - **Fertig, wenn:** Konsolen-Simulation ist reproduzierbar (Seed) und balanciert genug, dass kein Gut dauerhaft ausstirbt.
 
-## Phase 3 – Städte & Handel (≈ 4 Wochen)
+## Phase 3 – Städte & Handel (≈ 4 Wochen) — **✔ umgesetzt in v0.3** (12 Städte, 6 Orte je Stadt, Reisen per Leihschiff als Vorstufe zu Phase 5, Gewinnrouten per Test belegt)
 - 12 Städte mit je eigener Stadtansicht (Pixel) und Regionalstil: Ostsee-Gotik (Lübeck, Danzig, Stettin), Nordsee-Fachwerk (Hamburg, Brügge, London), Nordisch/Holz (Bergen, Visby), Slawisch/Ost (Novgorod, Riga, Reval).
 - 6 Hotspots je Stadt als Seiten: Marktplatz, Kontor, Werft, Schenke, Rathaus, Betriebe-Bauplatz.
 - Handelsfenster (Kaufen/Verkaufen mit Mengenregler, Preisübersicht, Gewinnanzeige), Kontor (Lager, Verwalter), Schenke (Kapitäne/Matrosen anheuern, Gerüchte), Rathaus (Vorräte, Erlasse).

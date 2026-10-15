@@ -86,3 +86,23 @@ h5{text-align:center;font-size:23px;font-weight:700;margin:10px 0 6px}
 .mbox .two{margin-top:12px}.mbox .two .b{min-height:56px;font-size:21px}
 
 .chart{display:flex;align-items:flex-end;gap:1px;height:44px;margin:2px 0 6px;padding:2px;background:#ecd9a2;border:2px solid var(--m)}.chart u{flex:1;background:var(--m);min-width:2px}.chart u:last-child{background:var(--red)}
+
+/* Phase 3 */
+.pbody{overflow-y:auto;scrollbar-width:none}.pbody::-webkit-scrollbar{display:none}
+.nav label{width:92px}.nav{gap:8px;left:312px}
+.gp{display:inline-flex;align-items:center;gap:3px;margin:2px 6px 2px 0;background:#ecd9a2;border:2px solid var(--m);padding:1px 6px;font-size:18px}.gps{margin:4px 0}
+.crow{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;margin:4px 0;background:#ecd9a2;border:2px solid var(--m);cursor:pointer;font-size:20px}.crow b{flex:1}.crow.sel{background:var(--gold);border-color:var(--k)}
+.card2.sel{background:#f6e4a8;border-color:var(--k)}.card2.off{opacity:.8}.tip2{background:#ecd9a2;border:2px solid var(--m);padding:7px 10px;margin:6px 0;font-size:19px;line-height:1.3}.tip2 small{font-size:16px}
+.stage .panel,.stage .ptoggle{transition:transform .18s steps(4)}
+.stage.phide .panel{transform:translateX(calc(100% + 16px))}
+.ptoggle{position:absolute;right:438px;top:50%;width:34px;height:84px;margin-top:-42px;z-index:7;background:var(--b);color:#f6e6b8;border:4px solid var(--k);border-right:0;box-shadow:inset 3px 3px 0 #9a6a38;font-size:18px}
+.stage.phide .ptoggle{transform:translateX(438px)}
+.hs.maphot{outline-offset:2px}.hs.maphot span{font-size:17px;padding:1px 8px;margin:0;background:#2a170acc;border-width:3px;pointer-events:none}
+.hs.maphot.lab-t span{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:2px}
+.hs.maphot.lab-b span{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:2px}
+.hs.maphot.lab-l span{position:absolute;right:100%;top:50%;transform:translateY(-50%);margin-right:2px}
+.hs.maphot.lab-r span{position:absolute;left:100%;top:50%;transform:translateY(-50%);margin-left:2px}
+.reg{margin:4px 0}.reg small{display:block;color:#f6e6b8;opacity:.85;font-size:15px}
+.chipc{display:inline-flex;width:auto;min-height:44px;margin:3px 6px 3px 0;padding:0 14px;font-size:19px}.chipc.on{background:#a8860c;box-shadow:inset 4px 4px 0 #f0c840,inset -4px -4px 0 #6a4a08}
+.citycard{margin-top:8px;padding:10px 14px;background:var(--d);border:4px solid var(--k);font-size:20px;line-height:1.3}.citycard small{font-size:16px;opacity:.9}.warnc{color:#ff9a8a}
+.mbox{width:980px;padding:20px 30px}.mgrid{grid-template-columns:1fr 1.8fr}.mbox h1{font-size:38px}
